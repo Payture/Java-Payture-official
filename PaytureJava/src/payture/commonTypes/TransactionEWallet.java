@@ -60,13 +60,13 @@ public class TransactionEWallet extends Transaction {
          * @param regCard - pass false if use not registered card in carrent transaction
          * @return current expanded transaction
         */
-        public Transaction expandTransaction( Customer customer, Card card, DATA data, boolean regCard ) throws IllegalArgumentException, IllegalAccessException 
+        public Transaction expandTransaction( Customer customer, Card card, Data data, boolean regCard ) throws IllegalArgumentException, IllegalAccessException 
         {
             if ( customer == null || card == null || data == null )
                 return this;
            // _sessionType = 
             Customer newCustom = new Customer( customer.VWUserLgn, customer.VWUserPsw, null, null );
-            DATA newData = new DATA();
+            Data newData = new Data();
             newData.SessionType = data.SessionType;
             newData.OrderId = data.OrderId;
             newData.Amount = data.Amount;
@@ -87,7 +87,7 @@ public class TransactionEWallet extends Transaction {
             {
                 newCustom.PhoneNumber = customer.PhoneNumber;
                 newCustom.Email = customer.Email;
-                newData = new DATA();
+                newData = new Data();
                 newData.SessionType = data.SessionType;
                 newData.IP = data.IP;
                 newData.TemplateTag = data.TemplateTag;
