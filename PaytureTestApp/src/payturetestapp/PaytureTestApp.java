@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Scanner;
 import payture.commonTypes.*;
@@ -27,6 +29,9 @@ public class PaytureTestApp {
      */
     
     static Random Random = new Random();
+    /*static String _host = "https://sandbox.payture.com";
+    static String _merchantKey = "Merchant";
+    static String _merchantPassword = "123";*/
     static String _host = "http://sasha:7080";
     static String _merchantKey = "elena_Test";
     static String _merchantPassword = "789555";
@@ -62,25 +67,34 @@ public class PaytureTestApp {
             allFields.put(PaytureParams.Method, "");
             allFields.put(PaytureParams.Language, "");
             allFields.put(PaytureParams.TemplateTag, "");
-            //allFields.put(PaytureParams.Url, ""); url is needed
+            allFields.put(PaytureParams.Url, ""); 
+            allFields.put(PaytureParams.Total, "1");
+            allFields.put(PaytureParams.Product, "Something"); 
 
-
+            System.out.println("Type 'help' for get description of commands for this console program.");
+            String help = input.nextLine();
+            if(help.equalsIgnoreCase("help"))
+            {
+                help();
+                System.out.println("Press enter for continue.");
+                input.nextLine();
+            }
+            
             System.out.println( String.format("Merchant account settings:\n\tMerchantName=%s\n\tMerchantPassword=%s\n\tHOST=%s\n", _merchantKey, _merchantPassword, _host) );
-            System.out.println("Press space for change Merchant account settings" );
+            System.out.println("Type space for change Merchant account settings" );
             char chInpt = (char) System.in.read();
 
             if ( chInpt == 32 )
             {
-
+                input.nextLine();
                 changeMerchant();
             }
 
             while(true)
             {
-
-                System.out.println("\nPress backspase for exit" );
-                char ch = (char) System.in.read();
-                if ( ch == 8 )
+                System.out.println("Type 'end' for exit" );
+                String end = input.nextLine();
+                if ( end.equalsIgnoreCase("end") )
                     break;
                 Router( );
             }
@@ -93,8 +107,7 @@ public class PaytureTestApp {
     
     static void WriteResult(PaytureResponse response)
     {
-       String print = String.format("\nResponse Result\n%s Success=%s; Attribute=%s", response.APIName, response.Success, response.Attributes);
-       // System.out.println("\nResponse Result\n{response.APIName} Success={response.Success}; Attribute=[{response.Attributes.Aggregate( "", ( a, c ) => a += $"{c.Key}={c.Value}; " )}]" );
+       String print = String.format("\nResponse Result\n%s Success=%s; ErrCode=%s; Attribute=%s", response.APIName, response.Success, response.ErrCode, response.Attributes);
        System.out.println(print);
     }
         
@@ -115,209 +128,180 @@ public class PaytureTestApp {
         String transactionSide = "";
         String regOrNoRegCard = "";
         String cmd = command[0].toUpperCase();  //main command
-        String noPayCmd = "FIELDS COMMANDS CHANGEFIELDS";
-        if ( noPayCmd.indexOf(cmd) == -1 )
-        {
-            try{
-            apiType = PaytureAPIType.valueOf(command[1]);
-            }
-            catch (Exception ex){
+        String noPayCmd = "FIELDS COMMANDS CHANGEFIELDS HELP CHANGEMERCHANT";
+        if ( noPayCmd.indexOf(cmd) == -1 ){
+            try {
+                String api = command[1];
+                if(api.equalsIgnoreCase("EWALLET"))
+                    apiType = PaytureAPIType.vwapi;
+                else if(api.equalsIgnoreCase("INPAY"))
+                    apiType = PaytureAPIType.apim;
+            } catch (Exception ex){
                 ex.printStackTrace();
             }
         }
-        if ( command.length > 2 )
-        {
-            if (  "I INIT P PAY".indexOf(cmd) != -1 )
-            {
+        if ( command.length > 2 ){
+            if (  "I INIT P PAY".indexOf(cmd) != -1 ){
                 sessionType = command[ 2 ].toUpperCase().subSequence(0, 1).toString(); //session type
-                if ( ( cmd == "PAY" || cmd == "P" ) && command.length >= 3 && apiType == PaytureAPIType.vwapi )
-                {
+                if ( ( cmd.equals("PAY") || cmd.equals("P") ) && command.length >= 3 && apiType == PaytureAPIType.vwapi ){
                     transactionSide = command[3].toUpperCase().subSequence( 0, 1 ).toString();
-                    if(transactionSide == "M" && command.length > 3)
+                    if(transactionSide.equals("M") && command.length > 3)
                         regOrNoRegCard = command[ 4 ].toUpperCase().subSequence( 0, 1 ).toString();
                 }
-                else if("INIT".equals(cmd) || "I".equals(cmd))
-                    { }
+                else if("INIT".equals(cmd) || "I".equals(cmd)) { }
                 else return;
             }
             else if("ADD".equals(cmd))
                 transactionSide = command[2].toUpperCase().subSequence( 0, 1 ).toString();
         }
 
-        switch ( cmd )
-        {
-            case "PAY":
-                {
-                    if ( apiType == PaytureAPIType.api )
-                    {
-                        payOrBlockAPI( PaytureCommands.Pay );
+        switch ( cmd ){
+            case "PAY":{
+                if ( apiType == PaytureAPIType.api ){
+                    payOrBlockAPI( PaytureCommands.Pay );
+                    break;
+                }
+                switch( transactionSide ){
+                    case "P":{
+                        payturePayOrAdd( PaytureCommands.Pay );
                         break;
                     }
-                    switch( transactionSide )
-                    {
-                        case "P":
-                            {
-                                payturePayOrAdd( PaytureCommands.Pay );
-                                break;
-                            }
-                        case "M":
-                            {
-                                Customer customer = getCustomer();
-                                DATA data = dataForInit(sessionType == "P" ? SessionType.Pay : SessionType.Block);          
-
-                                if(regOrNoRegCard != "R")
-                                {
-                                    Card card = getCard();
-                                    response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, card, data, false).processOperation();
-                                    break;
-
-                                }
-
-                                String cardId = allFields.get( PaytureParams.CardId );
-                                String secureCode = allFields.get( PaytureParams.SecureCode );
-                                System.out.println(String.format("CardId=%s; SecureCode=%s;", cardId, secureCode) );
-                                circleChanges( "CardId and SecureCode" );
-
-                                Card card = new Card();
-                                card.CardId = allFields.get(PaytureParams.CardId );
-                                card.SecureCode = Integer.getInteger(allFields.get( PaytureParams.SecureCode ));
-                                response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, card, data, true).processOperation();
-
-                                break;
-                            }
-                    }
-                    System.out.println(response);
-                    break;
-                }
-            case "BLOCK":
-                {
-                    payOrBlockAPI( PaytureCommands.Block );
-                    break;
-                }
-            case "CHARGE":
-                {
-                    chargeUnblockRefundGetState( PaytureCommands.Charge, apiType );
-                    break;
-                }
-            case "REFUND":
-                {
-                    chargeUnblockRefundGetState( PaytureCommands.Refund, apiType );
-                    break;
-                }
-            case "UNBLOCK":
-                {
-                    chargeUnblockRefundGetState( PaytureCommands.Unblock, apiType );
-                    break;
-                }
-            case "GETSTATE":
-                {
-                    chargeUnblockRefundGetState( PaytureCommands.GetState, apiType );
-                    break;
-                }
-            case "PAYSTATUS":
-                {
-                    chargeUnblockRefundGetState( PaytureCommands.PayStatus, apiType );
-                    break;
-                }
-            case "INIT":
-                {
-                    SessionType t = "P".equals(sessionType) ? SessionType.Pay : "B".equals(sessionType)? SessionType.Block : SessionType.Add;
-                    DATA data = dataForInit(t);
-
-
-                    if ( apiType == PaytureAPIType.vwapi )
-                    {
+                    case "M":{
                         Customer customer = getCustomer();
-                        response = _merchant.EWallet( PaytureCommands.Init ).expandTransaction( customer, new Card(), data, false ).processOperation();
-                    }
-                    else
-                        response = _merchant.InPay( PaytureCommands.Init ).expandTransaction( data ).processOperation();
-                    Desktop desktop = Desktop.getDesktop();
-                    desktop.browse(new URL(response.RedirectURL).toURI());
-                    break;
-                }
-            case "ACTIVATE":
-                {
-                    customerAndCardAPI( PaytureCommands.Activate );
-                    break;
-                }
-            case "REMOVE":
-                {
-                    customerAndCardAPI(  PaytureCommands.Remove );
-                    break;
-                }
-            case "GETLIST":
-                {
-                    customerAndCardAPI( PaytureCommands.GetList );
-                    break;
-                }
-            case "REGISTER":
-                {
-                    customerAndCardAPI( PaytureCommands.Register );
-                    break;
-                }
-            case "UPDATE":
-                {
-                    customerAndCardAPI( PaytureCommands.Update );
-                    break;
-                }
-            case "DELETE":
-                {
-                    customerAndCardAPI( PaytureCommands.Delete );
-                    break;
-                }
-            case "CHECK":
-                {
-                    customerAndCardAPI( PaytureCommands.Check );
-                    break;
-                }
-             case "ADD":
-                {
-                    switch(transactionSide)
-                    {
-                        case "P":
-                            {
-                                payturePayOrAdd( PaytureCommands.Add );
-                                break;
-                            }
-                        case "M":
-                            {
-                                Customer customer = getCustomer();
-                                Card card = getCard();
+                        DATA data = dataForInit(sessionType == "P" ? SessionType.Pay : SessionType.Block);          
 
-                                response = _merchant.EWallet( PaytureCommands.Add ).expandTransaction(customer, card).processOperation();    
-                                break;
-                            }
+                        if(!regOrNoRegCard.equals("R")){
+                            Card card = getCard();
+                            response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, card, data, false).processOperation();
+                            break;
+                        }
+
+                        String cardId = allFields.get( PaytureParams.CardId );
+                        String secureCode = allFields.get( PaytureParams.SecureCode );
+                        System.out.println(String.format("CardId=%s; SecureCode=%s;", cardId, secureCode) );
+                        circleChanges( "CardId and SecureCode" );
+
+                        Card card = new Card();
+                        card.CardId = allFields.get(PaytureParams.CardId );
+                        card.SecureCode = Integer.getInteger(allFields.get( PaytureParams.SecureCode ));
+                        response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, card, data, true).processOperation();
+
+                        break;
                     }
-                    break;
                 }
-            case "FIELDS":
-                {
-                    //String aggrStr = allFields.Aggregate( $"{Environment.NewLine}Current value of fields:{Environment.NewLine}", ( a, c ) => a += $"\t{c.Key} = {c.Value}{Environment.NewLine}" );
-                    //System.out.println( aggrStr );
-                    break;
+                break;
+            }
+            case "BLOCK":{
+                payOrBlockAPI( PaytureCommands.Block );
+                break;
+            }
+            case "CHARGE":{
+                chargeUnblockRefundGetState( PaytureCommands.Charge, apiType );
+                break;
+            }
+            case "REFUND":{
+                chargeUnblockRefundGetState( PaytureCommands.Refund, apiType );
+                break;
+            }
+            case "UNBLOCK":{
+                chargeUnblockRefundGetState( PaytureCommands.Unblock, apiType );
+                break;
+            }
+            case "GETSTATE":{
+                chargeUnblockRefundGetState( PaytureCommands.GetState, apiType );
+                break;
+            }
+            case "PAYSTATUS":{
+                chargeUnblockRefundGetState( PaytureCommands.PayStatus, apiType );
+                break;
+            }
+            case "INIT":{
+                SessionType t = "P".equals(sessionType) ? SessionType.Pay : "B".equals(sessionType)? SessionType.Block : SessionType.Add;
+                DATA data = dataForInit(t);
+
+
+                if ( apiType == PaytureAPIType.vwapi ){
+                    Customer customer = getCustomer();
+                    response = _merchant.EWallet( PaytureCommands.Init ).expandTransaction( customer, new Card(), data, false ).processOperation();
                 }
-            case "CHANGEFIELDS":
-                {
-                    circleChanges(null);
-                    break;
+                else
+                    response = _merchant.InPay( PaytureCommands.Init ).expandTransaction( data ).processOperation();
+                
+                Desktop desktop = Desktop.getDesktop();
+                desktop.browse(new URL(response.RedirectURL).toURI());
+                break;
+            }
+            case "ACTIVATE":{
+                customerAndCardAPI( PaytureCommands.Activate );
+                break;
+            }
+            case "REMOVE":{
+                customerAndCardAPI(  PaytureCommands.Remove );
+                break;
+            }
+            case "GETLIST":{
+                customerAndCardAPI( PaytureCommands.GetList );
+                break;
+            }
+            case "REGISTER":{
+                customerAndCardAPI( PaytureCommands.Register );
+                break;
+            }
+            case "UPDATE":{
+                customerAndCardAPI( PaytureCommands.Update );
+                break;
+            }
+            case "DELETE":{
+                customerAndCardAPI( PaytureCommands.Delete );
+                break;
+            }
+            case "CHECK":{
+                customerAndCardAPI( PaytureCommands.Check );
+                break;
+            }
+            case "ADD": {
+                switch(transactionSide){
+                    case "P":{
+                        payturePayOrAdd( PaytureCommands.Add );
+                        break;
+                    }
+                    case "M":{
+                        Customer customer = getCustomer();
+                        Card card = getCard();
+
+                        response = _merchant.EWallet( PaytureCommands.Add ).expandTransaction(customer, card).processOperation();    
+                        break;
+                    }
                 }
-            case "COMMANDS":
-                {
-                    listCommands();
-                    break;
+                break;
+            }
+            case "FIELDS":{
+                System.out.println();
+                for(Entry<PaytureParams, String> pair : allFields.entrySet()){
+                    System.out.println(pair.getKey() + " = " + pair.getValue());
                 }
-            case "CHANGEMERCHANT":
-                {
-                    changeMerchant();
-                    break;
-                }
+                System.out.println();
+                break;
+            }
+            case "CHANGEFIELDS":{
+                circleChanges(null);
+                break;
+            }
+            case "COMMANDS":{
+                listCommands();
+                break;
+            }
+            case "CHANGEMERCHANT":{
+                changeMerchant();
+                break;
+            }
+            case "HELP":{
+                help();
+            }
         }
-        if ( "FIELDS CHANGEFIELDS COMMANDS CHANGEMERCHANT".indexOf(cmd ) == -1 )
+        if ( "FIELDS CHANGEFIELDS COMMANDS CHANGEMERCHANT HELP".indexOf(cmd ) == -1 )
             WriteResult( response );
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -357,23 +341,13 @@ public class PaytureTestApp {
 
     static PayInfo payInfoFromCurrentSettings()
     {
-      /* for (Map.Entry<PaytureParams, String> entry: allFields.entrySet())
-            System.out.println(entry.getKey() + " = " + entry.getValue());*/
-
         String pan = allFields.get( PaytureParams.PAN );
-        System.out.println("PAN: " + pan);
         Integer em = Integer.parseInt( allFields.get( PaytureParams.EMonth ) );
-        System.out.println("eMonth: " + em);
         Integer ye = Integer.parseInt( allFields.get( PaytureParams.EYear ));
-        System.out.println("eYear: " + ye);
         String holder = allFields.get( PaytureParams.CardHolder );
-        System.out.println("CardHolder: " + holder);
         Integer secCode = Integer.parseInt( allFields.get( PaytureParams.SecureCode ) );
-        System.out.println("SecureCode: " + secCode);
         String orId = allFields.get( PaytureParams.OrderId );
-        System.out.println("OrderId: " + orId);
         Integer amount = Integer.parseInt( allFields.get( PaytureParams.Amount ) );
-        System.out.println("Amount: " + amount);
         PayInfo info = new PayInfo( pan, em, ye, holder,  secCode, orId,  amount );
         return info;
     }
@@ -392,6 +366,8 @@ public class PaytureTestApp {
         data.OrderId = allFields.get( PaytureParams.OrderId );
         data.SessionType = allFields.get( PaytureParams.SessionType );
         data.TemplateTag = allFields.get( PaytureParams.TemplateTag );
+        data.Total = Integer.parseInt( allFields.get( PaytureParams.Amount ));
+        data.Product = allFields.get( PaytureParams.Product );
         return  data;
     }
 
@@ -403,7 +379,7 @@ public class PaytureTestApp {
         String propsPayInfo = String.format("PayInfo params:\n%s", getPropertiesString(payInfo)); 
         System.out.println( "Default settings PayInfo:" );
         System.out.println( propsPayInfo + "\n" );
-        circleChanges(null);
+        circleChanges("PayInfo data");
         return payInfoFromCurrentSettings();
     }
 
@@ -416,8 +392,8 @@ public class PaytureTestApp {
             String cardId = allFields.get( PaytureParams.CardId );
             System.out.println( "CardId: " + cardId );
             circleChanges( "CardId" );
-            Integer i = command == PaytureCommands.Activate ? 101 : null;
-            response = _merchant.EWallet( command ).expandTransaction( customer, allFields.get(PaytureParams.CardId), i , null).processOperation();
+            Integer amountForActivate = command == PaytureCommands.Activate ? 101 : null;
+            response = _merchant.EWallet( command ).expandTransaction( customer, allFields.get(PaytureParams.CardId), amountForActivate, null).processOperation();
         }
         response = _merchant.EWallet( command ).expandTransaction( customer ).processOperation();
     }
@@ -464,33 +440,26 @@ public class PaytureTestApp {
 
     static void circleChanges(String message) 
     {
-        try{
-        if(message == null || message.isEmpty())
-        {
+        if( message == null || message.isEmpty()){
             message = "default settings";
         }
-        System.out.println( String.format("Please enter <1> if you wanna change %s:", message) );
+        System.out.println( String.format("Type '1' if you wanna change %s:", message) );
         int val = 0;
         try {
-            val = input.nextInt();
-        }
-        catch( Exception ex) {
+            val = Integer.parseInt( input.nextLine());
+        } catch( Exception ex ) {
             val = 0;
         }
         if ( val == 1 )
             while ( true ) {
-                System.out.println( "Press Backspace if you completed changes" );
-                char ch = (char) System.in.read();
-                if ( /*ch == 8*/ true )
+                System.out.println( "Type 'ok' if you completed changes" );
+                String ok = input.nextLine();
+                if ( ok.equalsIgnoreCase("ok") )
                     break;
 
                 changeFields();
             }
-        }
-        catch( IOException e)
-        {
-            e.printStackTrace();
-        }
+        
 
     }
     static void changeFields()
@@ -507,17 +476,50 @@ public class PaytureTestApp {
             if(!str.contains("="))
                 continue;
             String[] strs = str.split("=");
-            PaytureParams param = PaytureParams.valueOf(strs[0]);
+            String paramStr = strs[0].toLowerCase();
+            paramStr = paramStr.substring(0, 1).toUpperCase() + paramStr.substring(1, paramStr.length());
+            PaytureParams param = PaytureParams.valueOf(paramStr);
             allFields.replace( param, strs[1]);
         }
     }
 
     public static void listCommands()
     {
-        System.out.println( "Common commands:\n\tfields\n\tchangefields\n\tcommands\n\n" );
-        System.out.println( "Payments commands:\n\tpay\n\tblock\n\tunblock\n\tcharge\n\trefund\n\tgetstate\n\tpaystatus\n\tregister\n\tcheck\n\tupdate\n\tremove\n\tadd\n\tactivate\n\tdelete\n\tgetlist\n\tsendcode\n\n\n" );
+        System.out.println("Commands for help:\n" + 
+                    "\tfields\t\t- list current key-value pairs that used in request to Payture server.\n" +
+                    "\tchangefields\t\t- command for changing current values of  key-value pairs that used in request to Payture server.\n" + 
+                    "\tcommands\t\t- list avaliable commands for this console program.\n" + 
+                    "\tchangemerchant\t\t- commands for changing current merchant account settings.\n" +
+                    "\thelp\t\t- commands that types this text (description of commands that you can use in this console program.).\n\n");
+         System.out.println("Commands for invoke PaytureAPI functions.\n" +
+                    "\tpay\t-\n" +
+                    "\tblock\t- only for api\n" + 
+                    "\tcharge\t-\n" + 
+                    "\tunblock\t-\n" +
+                    "\trefund\t-\n" + 
+                    "\tgetsstate\t- only for api\n" +
+                    "\tpaystatus\t- for vwapi and apim\n" + 
+                    "\tinit\t-\n" + 
+                    "\tregister\t-\n" +
+                    "\tcheck\t-\n" + 
+                    "\tupdate\t-\n" + 
+                    "\tdelete\t-\n" +
+                    "\tadd\t-\n" +
+                    "\tactivate\t-\n" +   
+                    "\tsendcode\t-\n" +
+                    "\tremove\t-\n"  );
     }
-
+    
+    public static void help()
+    {
+        System.out.println("Then console promt you 'Type command' - you can type commands for invoke PaytureAPI functions and you can types commands for help.");
+        System.out.println("The structure of commands for invoke PaytureAPI functions:\n\t=>Fist keyword is one of avaliable command for PaytureAPI (like pay, block for example);\n");
+        System.out.println("\t=>For second keyword you must state the api type, one of following:\n\t\tapi - for PaytureAPI\n\t\tinpay - for PaytureInPay\n\t\tewallet - for PaytureEWallet\n\t\tapple - for PaytureApplePay\n\t\tandroid - for PaytureAndroidPay\n");
+        System.out.println("\t=>Third keyword is needed for specify:\n\t\tSessionType in 'init' command (can be 'pay', 'block', 'add').");
+        System.out.println("\t=>Fourth keyword used for specify transaction side for 'pay' ");
+        System.out.println("See commands description:\n\n");
+        listCommands();
+    }
 
     static void payOrBlockAPI( PaytureCommands command ) throws IllegalAccessException
     {
@@ -525,10 +527,10 @@ public class PaytureTestApp {
         String paytureId = allFields.get(PaytureParams.PaytureId);
         String custKey = allFields.get(PaytureParams.CustomerKey);
         String custFields = allFields.get(PaytureParams.CustomFields);
-        String propsPayInfo = String.format("PayInfo params:\n%s", getPropertiesString(payInfo));
+        String.format("PayInfo params:\n%s", getPropertiesString(payInfo));
         System.out.println( "Additional settings for request:" );
-        System.out.println(String.format( "%s\nPaytureId = %s\nCustomerKey = %s\nCustomFields = %s\n", 
-                propsPayInfo, paytureId, custKey, custFields ));
+        System.out.println(String.format( "\nPaytureId = %s\nCustomerKey = %s\nCustomFields = %s\n", 
+                 paytureId, custKey, custFields ));
         circleChanges(null);
         response = _merchant.Api( command ).expandTransaction( payInfo, null, allFields.get(PaytureParams.CustomerKey), allFields.get(PaytureParams.PaytureId) ).processOperation();
     }
@@ -537,10 +539,13 @@ public class PaytureTestApp {
     {
         System.out.println( "Type Merchant account name:" );
         _merchantKey = input.nextLine();
-        System.out.println( "Type Merchant account password" );
+        
+        System.out.println( "Type Merchant account password:" );
         _merchantPassword = input.nextLine();
+        
         System.out.println( "Type host name:" );
         _host = input.nextLine();
+        
         System.out.println( String.format("Merchant account settings:\n\tMerchantName=%s\n\tMerchantPassword=%s\n\tHOST=%s\n", 
                 _merchantKey,_merchantPassword, _host ) );
         _merchant = new Merchant( _merchantKey, _merchantPassword, _host );
@@ -560,6 +565,4 @@ public class PaytureTestApp {
         }
         return result;
     }
-
-    
 }

@@ -19,45 +19,41 @@ public class Merchant {
     private String _host;
 
     //region properties
-    public String getMerchantName()
-    { 
+    public String getMerchantName(){ 
         return _key; 
     }
-    public String getPassword() 
-    { 
+    public String getPassword(){ 
         return _password; 
     }
-    public String getHOST()
-    {
+    public String getHOST(){
         return _host;  
     }
 
-    public Merchant( String accountName, String password, String host )
-    {
+    public Merchant( String accountName, String password, String host ){
         _key = accountName;
         _password = password;
         _host = host;
     }
 
-    public TransactionAPI Api(PaytureCommands command)
-    {
+    public TransactionAPI Api(PaytureCommands command){
         return new TransactionAPI( command, this );
     }
 
-    public TransactionInPay InPay( PaytureCommands command )
-    {
+    public TransactionInPay InPay( PaytureCommands command ){
         return new TransactionInPay( command, this );
     }
 
-    public TransactionEWallet EWallet( PaytureCommands command )
-    {
+    public TransactionEWallet EWallet( PaytureCommands command ){
         return new TransactionEWallet( command, this );
     }
 
-  /*  public PaytureAPI GETPaytureApplePay( PaytureCommands command )
-    {
-        return new PaytureAPI( this, PaytureAPIType.api );
-    }*/
+    public TransactionDigitalWallet Apple( PaytureCommands command ){
+        return new TransactionDigitalWallet( command, this, PaytureCommands.ApplePay );
+    }
+    
+    public TransactionDigitalWallet Android( PaytureCommands command ){
+        return new TransactionDigitalWallet( command, this, PaytureCommands.AndroidPay );
+    }
 
  }
 

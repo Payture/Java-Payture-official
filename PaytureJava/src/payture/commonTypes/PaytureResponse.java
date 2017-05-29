@@ -10,7 +10,9 @@ package payture.commonTypes;
  * @author Soloveva Elena
  */
 import java.util.HashMap;
+import java.util.List;
 import payture.paytureEnums.*;
+import payture.typesForEncoding.Card;
 
 public class PaytureResponse {
         public PaytureCommands APIName;
@@ -20,7 +22,8 @@ public class PaytureResponse {
         public String SessionId;
         public HashMap<String, String> Attributes;
         public Object InternalElements;
-
+        public List<CardInfo> ListCards;
+        public String ResponseBodyXML;
             
         public static PaytureResponse errorResponse(Transaction transaction, String message)
         {

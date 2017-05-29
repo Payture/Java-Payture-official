@@ -15,8 +15,8 @@ public class DATA extends DataBase {
         public String ConfirmCode;
         public String CustomFields;
         
-        public DATA( SessionType sessionType, String orderId, long amount, String ip, String confirmCode,  String[] customFields, String template, String lang ) {
-            super( sessionType, orderId, amount, ip, null,template, lang );
+        public DATA( SessionType sessionType, String orderId, long amount, String ip, String product, Integer total, String confirmCode,  String[] customFields, String template, String lang ) {
+            super( sessionType, orderId, amount, ip, product, total, null,template, lang );
             ConfirmCode = confirmCode;
             int i = 1;
             String resultStr = "";
