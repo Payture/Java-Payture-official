@@ -61,7 +61,7 @@ And pass in the [PaytureCommands](#PaytureCommands).
 ```java
 merchant.Apple( PaytureCommands.Pay );
 ```
-* Android (this is PaytureApplePay)
+* Android (this is PaytureAndroidPay)
 And pass in the [PaytureCommands](#PaytureCommands).
 ```java
 merchant.Android( PaytureCommands.Pay );
