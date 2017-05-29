@@ -11,12 +11,35 @@ import payture.paytureEnums.SessionType;
  *
  * @author Soloveva Elena
  */
-public class DATA extends DataBase {
+public class Data extends EncodeString {
+        public String SessionType;
+        public String IP;
+        public String TemplateTag;
+        public String Language;
+        public String OrderId;
+        public long Amount;
+        public String Url;
+        public String Product;
+        public Integer Total;
         public String ConfirmCode;
         public String CustomFields;
         
-        public DATA( SessionType sessionType, String orderId, long amount, String ip, String product, Integer total, String confirmCode,  String[] customFields, String template, String lang ) {
-            super( sessionType, orderId, amount, ip, product, total, null,template, lang );
+        public Data(SessionType sessionType, String orderId, long amount, String ip, String product, Integer total, String url,String template, String lang )
+        {
+            SessionType = ("None".equals(sessionType.toString())  ? null : sessionType.toString());
+            OrderId = orderId;
+            Amount = amount;
+            IP = ip;
+            TemplateTag = template;
+            Language = lang;
+            Url = url;
+            Product = product;
+            Total = total;
+        }
+        
+        
+        public Data( SessionType sessionType, String orderId, long amount, String ip, String product, Integer total, String confirmCode,  String[] customFields, String template, String lang ) {
+            this( sessionType, orderId, amount, ip, product, total, null,template, lang );
             ConfirmCode = confirmCode;
             int i = 1;
             String resultStr = "";
@@ -26,5 +49,6 @@ public class DATA extends DataBase {
             }
             CustomFields = ( customFields == null ? null : resultStr );
         }
-        public DATA(){}
+        
+        public Data(){}
 }
