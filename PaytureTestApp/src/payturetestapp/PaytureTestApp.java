@@ -166,7 +166,7 @@ public class PaytureTestApp {
                     }
                     case "M":{
                         Customer customer = getCustomer();
-                        DATA data = dataForInit(sessionType == "P" ? SessionType.Pay : SessionType.Block);          
+                        Data data = dataForInit(sessionType == "P" ? SessionType.Pay : SessionType.Block);          
 
                         if(!regOrNoRegCard.equals("R")){
                             Card card = getCard();
@@ -215,7 +215,7 @@ public class PaytureTestApp {
             }
             case "INIT":{
                 SessionType t = "P".equals(sessionType) ? SessionType.Pay : "B".equals(sessionType)? SessionType.Block : SessionType.Add;
-                DATA data = dataForInit(t);
+                Data data = dataForInit(t);
 
 
                 if ( apiType == PaytureAPIType.vwapi ){
@@ -355,9 +355,9 @@ public class PaytureTestApp {
         return new Customer( allFields.get( PaytureParams.VWUserLgn ), allFields.get( PaytureParams.VWUserPsw ), allFields.get( PaytureParams.PhoneNumber ), allFields.get( PaytureParams.Email ) );
     }
 
-    static DATA dataFromCurrentSettings()
+    static Data dataFromCurrentSettings()
     {
-        DATA data = new DATA();
+        Data data = new Data();
         data.Amount = allFields.get( PaytureParams.Amount ) == null ? null : Integer.parseInt( allFields.get( PaytureParams.Amount ) );
         data.IP = allFields.get( PaytureParams.IP );
         data.Language = allFields.get( PaytureParams.Language );
@@ -422,12 +422,12 @@ public class PaytureTestApp {
         response = trans.expandTransaction( orderId, Integer.parseInt( amount) ).processOperation();
     }
 
-    private static DATA dataForInit(SessionType type) throws  IllegalArgumentException, IllegalAccessException
+    private static Data dataForInit(SessionType type) throws  IllegalArgumentException, IllegalAccessException
     {
         generateAmount();
         generateOrderId();
         allFields.replace(PaytureParams.SessionType, type.toString());
-        DATA data = dataFromCurrentSettings();
+        Data data = dataFromCurrentSettings();
         String propsDataDefault = String.format("Data params:\n%s", getPropertiesString(data)); 
         System.out.println( "Default settings for request:" );
         System.out.println( propsDataDefault + "\n" );

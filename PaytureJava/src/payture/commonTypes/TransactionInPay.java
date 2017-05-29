@@ -6,7 +6,7 @@
 package payture.commonTypes;
 
 import payture.paytureEnums.*;
-import payture.typesForEncoding.DataBase;
+import payture.typesForEncoding.Data;
 
 /**
  *
@@ -23,7 +23,7 @@ public class TransactionInPay extends Transaction {
      * @param data - ....
      * @return current expanded transaction
     */
-    public Transaction expandTransaction( DataBase data ) throws IllegalArgumentException, IllegalAccessException
+    public Transaction expandTransaction( Data data ) throws IllegalArgumentException, IllegalAccessException
     {
         if ( data == null )
             return this;

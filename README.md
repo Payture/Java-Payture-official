@@ -22,6 +22,7 @@ Before fall into the deep, we're need to provide you general conception of worki
 * [Customer](#Customer)
 * [PaytureResponse](#PaytureResponse)
 * [CardInfo](#CardInfo)
+* [Transaction](#Transaction)
 
 ## [Test App](#testApp)
 
@@ -187,6 +188,22 @@ Card card2 = new Card( "4111111111111112", 10, 20, "Test Test", 123, "40252318-d
 Card card3 = new Card( null, null, null, null, 123, "40252318-de07-4853-b43d-4b67f2cd2077" );  //this used in PaytureCommand.Pay on merchant side
 ```
 ### Data <a id="Data"></a>
+This is object used for PaytureEWallet and PaytureInPay, consist of following fields 
+
+| Fields's name    | Field's type  | Definition                                                                                                          |
+| ---------------- | ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| SessionType      | String        | Session Type - determines the type of operation. In this object - it's string representation of SessionType enum.   |
+| IP               | String        | Customer's IP adress.                                                                                               |
+| TemplateTag      | String        | Tamplate which used for payment page.                                                                               | 
+| Language         | String        | Addition parameter for determining language of template.                                                            |
+| OrderId          | String        | Payment identifier in your service system.                                                                          |
+| Amount           | long          | Amount of payment kopec.                                                                                            |
+| Url              | String        | The adress to which Customer will be return after completion of payment.                                            |
+| Product          | String        | Name of product.                                                                                                    | 
+| Total            | Integer       | Total Amount of purchase.                                                                                           |
+| ConfirmCode      | String        | Confirmation code from SMS. Required in case of confirm request for current transaction.                            |
+| CustomFields     | String        | Addition transaction's fields.                                                                                      |
+
 
 ### PaytureCommands <a id="PaytureCommands"></a>
 This is enum of **all** available commands for Payture API.
@@ -261,6 +278,10 @@ Special object for containing Customer card's information, that we're received f
 | ActiveStatus     | String        | Indicate of card's active status in Payture system                     |
 | Expired          | Boolean       | Indicate whether the card expired on the current date                  |
 | NoCVV            | Boolean       | Indicate whether or not payment without CVV/CVC2                       |
+
+### Transaction <a id="Transaction"></a>
+You don't needed to create object of this type by yoursef - it will be created for you then you access to appopriate API via Merchant object. 
+This object contans the necessary fields which used in request construction process. And this is abstract type.
 
 
 
