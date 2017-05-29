@@ -21,7 +21,6 @@ public class PaytureResponse {
         public String RedirectURL;
         public String SessionId;
         public HashMap<String, String> Attributes;
-        public Object InternalElements;
         public List<CardInfo> ListCards;
         public String ResponseBodyXML;
             
