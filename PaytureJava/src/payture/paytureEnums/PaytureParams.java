@@ -42,5 +42,8 @@ public enum PaytureParams {
         Method,
         TemplateTag,
         Language,
+        Product,
+        Total,
+        Url,
         Unknown
 }

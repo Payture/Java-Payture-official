@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.lang.Object;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -32,9 +33,11 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.jdom2.Document;
+import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import payture.paytureEnums.*;
+import payture.typesForEncoding.Card;
 
 
 
@@ -42,7 +45,7 @@ import payture.paytureEnums.*;
  public class Transaction extends RequestClient {
      
      
-     ResponseHandler<PaytureResponse> rh = new ResponseHandler<PaytureResponse>() {
+    ResponseHandler<PaytureResponse> rh = new ResponseHandler<PaytureResponse>() {
 
     @Override
     public PaytureResponse handleResponse(
@@ -72,12 +75,25 @@ import payture.paytureEnums.*;
             r.APIName = PaytureCommands.valueOf(nameApi);
             r.Success = Boolean.parseBoolean(success);
             r.ErrCode = error;
-            if(sess != null && !sess.isEmpty())
-            {
+            r.ResponseBodyXML = contents;
+            if(sess != null && !sess.isEmpty()){
                 r.SessionId = sess;
                 r.RedirectURL = String.format("%s/%s/%s?SessionId=%s", _merchant.getHOST(), _apiType, _sessionType == SessionType.Add ? PaytureCommands.Add : PaytureCommands.Pay, sess);
             }
-            System.out.println(r);
+            if(r.APIName == PaytureCommands.GetList) {
+                r.ListCards = new ArrayList<>();
+                List<Element> temp = doc.getRootElement().getChildren();
+                temp.forEach((card) -> {
+                    CardInfo c = new CardInfo(
+                            card.getAttributeValue("CardName"),
+                            card.getAttributeValue("CardId"),
+                            card.getAttributeValue("CardHolder"),
+                            card.getAttributeValue("Status"),
+                            Boolean.parseBoolean(card.getAttributeValue("Expired")),
+                            Boolean.parseBoolean(card.getAttributeValue("NoCVV")));
+                    r.ListCards.add(c);
+                });
+            }
             return r;
         } catch (JDOMException e) {
             System.out.print(e);
@@ -204,12 +220,12 @@ import payture.paytureEnums.*;
                 return null;
             }
         } 
+        
+        
+        /** Process request to Payture server asynchronously
+         * @return PaytureResponse for request - response from the Payture server. In case of exeption will be return PaytureResponse with exeption mesage in ErrCode field
+        */
         /*
-        /// <summary>
-        /// Process request to Payture server synchronously
-        /// </summary>
-        /// <returns>PaytureResponse - response from the Payture server.</returns>
-
         public  FuturePaytureResponse> processOperationAsync()
         {
             if ( !_expanded )

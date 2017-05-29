@@ -31,6 +31,7 @@ public enum PaytureCommands {
         SendCode,
         GetList,
         ApplePay,
+        AndroidPay,
         Update,
         PaySubmit3DS,
 }

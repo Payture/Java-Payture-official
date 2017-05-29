@@ -19,8 +19,10 @@ public class DataBase extends EncodeString {
         public String OrderId;
         public long Amount;
         public String Url;
+        public String Product;
+        public Integer Total;
         
-        public DataBase(SessionType sessionType, String orderId, long amount, String ip, String url,String template, String lang )
+        public DataBase(SessionType sessionType, String orderId, long amount, String ip, String product, Integer total, String url,String template, String lang )
         {
             SessionType = ("None".equals(sessionType.toString())  ? null : sessionType.toString());
             OrderId = orderId;
@@ -29,6 +31,8 @@ public class DataBase extends EncodeString {
             TemplateTag = template;
             Language = lang;
             Url = url;
+            Product = product;
+            Total = total;
         }
         
         public DataBase(){}

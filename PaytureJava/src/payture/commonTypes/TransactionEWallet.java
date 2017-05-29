@@ -92,6 +92,8 @@ public class TransactionEWallet extends Transaction {
                 newData.IP = data.IP;
                 newData.TemplateTag = data.TemplateTag;
                 newData.Language = data.Language;
+                newData.Total = data.Total;    
+                newData.Product = data.Product;
                 newData.Amount = data.Amount;
                 if( data.SessionType == null ? SessionType.Add.toString() != null : !data.SessionType.equals(SessionType.Add.toString()) )
                 {
