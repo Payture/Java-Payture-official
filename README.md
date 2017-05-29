@@ -14,6 +14,18 @@ Before fall into the deep, we're need to provide you general conception of worki
  * [Expand transaction](#expandTransaction)
  * [Send request](#sendRequest)
 
+## [Base Types](#baseTypes)
+* [PayInfo](#PayInfo)
+* [Card](#Card)
+* [Data](#Data)
+* [PaytureCommands](#PaytureCommands)
+* [Customer](#Customer)
+* [PaytureResponse](#PaytureResponse)
+* [CardInfo](#CardInfo)
+
+## [Test App](#testApp)
+
+
 Now, let's walk through the steps from the picture above
 
 
@@ -135,14 +147,8 @@ After transaction is expanded you can send request to the Payture server via one
 * ProcessOperationAsync(); - this async method, return Task<PaytureResponse> object;
 
 
-## Base Types:
-* [PayInfo](#PayInfo)
-* [Card](#Card)
-* [Data](#Data)
-* [PaytureCommands](#PaytureCommands)
-* [Customer](#Customer)
-* [PaytureResponse](#PaytureResponse)
-* [CardInfo](#CardInfo)
+## Base Types <a id="baseTypes"></a>:
+
 
 ### PayInfo <a id="PayInfo"></a>
 This object used for PaytureAPI and consist of following fields:
@@ -255,6 +261,12 @@ Special object for containing Customer card's information, that we're received f
 | ActiveStatus     | String        | Indicate of card's active status in Payture system                     |
 | Expired          | Boolean       | Indicate whether the card expired on the current date                  |
 | NoCVV            | Boolean       | Indicate whether or not payment without CVV/CVC2                       |
+
+
+
+## Test application <a id="testApp"></a>
+You can download simple test application - realized as console app - and test work of our API just type the command in command line. Full description of command for app available into app by the command help. And then the app starts - it ask you for necessity of assistance.
+
 
 Visit our [site](http://payture.com/) for more information.
 You can find our contact [here](http://payture.com/kontakty/).
