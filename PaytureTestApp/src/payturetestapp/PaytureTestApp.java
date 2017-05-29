@@ -29,12 +29,10 @@ public class PaytureTestApp {
      */
     
     static Random Random = new Random();
-    /*static String _host = "https://sandbox.payture.com";
-    static String _merchantKey = "Merchant";
-    static String _merchantPassword = "123";*/
-    static String _host = "http://sasha:7080";
-    static String _merchantKey = "elena_Test";
-    static String _merchantPassword = "789555";
+
+    static String _host = " https://sandbox.payture.com";
+    static String _merchantKey = "accountName";
+    static String _merchantPassword = "accountPassword";
     static Merchant _merchant = new Merchant( _merchantKey, _merchantPassword, _host );
     static PaytureResponse response = null;
     static HashMap<PaytureParams, String> allFields = new HashMap<PaytureParams, String>();
