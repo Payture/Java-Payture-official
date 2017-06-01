@@ -29,10 +29,8 @@ public class TransactionEWallet extends Transaction {
         {
             if ( customer == null || card == null )
                 return this;
-            _requestKeyValuePair.put( PaytureParams.DATA, customer.getPropertiesString() + card.getPropertiesString() );
-            
-            _expanded = true;
-            return this;
+            String str =  customer.getPropertiesString() + card.getPropertiesString();
+            return expandInternal( PaytureParams.DATA, str );
         }
 
         
@@ -44,73 +42,62 @@ public class TransactionEWallet extends Transaction {
         {
             if ( _expanded )
                 return this;
+            String str;
             if ( Command == PaytureCommands.Delete )
-                _requestKeyValuePair.put( PaytureParams.DATA, String.format("%s=%s;%s=%s;", PaytureParams.VWUserLgn,  customer.VWUserLgn, PaytureParams.Password,_merchant.getPassword()) );
+                str = String.format("%s=%s;%s=%s;", PaytureParams.VWUserLgn,  customer.VWUserLgn, PaytureParams.Password,_merchant.getPassword());
             else
-                _requestKeyValuePair.put( PaytureParams.DATA, customer.getPropertiesString() );
-            expandTransaction(true, false);
-            _expanded = true;
-            return this;
+                str = customer.getPropertiesString();
+            return expandInternal( PaytureParams.DATA, str );
         }
 
-        /** Expand transaction for EWallet Methods: Init/Pay (Merchant side reg/noreg card) 
+        /** Expand transaction for EWallet Methods: Pay (Merchant side for NOT REGISTERED card)
          * @param customer - Customer object
-         * @param card - Card object
-         * @param data - DATA object
-         * @param regCard - pass false if use not registered card in carrent transaction
+         * @param card - Card object. Specify in it all fields exclude CardId.
+         * @param data - Data object. SessionType and IP fields are required. Optional ConfimCode and CustomFields.
          * @return current expanded transaction
         */
-        public Transaction expandTransaction( Customer customer, Card card, Data data, boolean regCard ) throws IllegalArgumentException, IllegalAccessException 
+        public Transaction expandTransaction( Customer customer, Card card, Data data ) throws IllegalArgumentException, IllegalAccessException
         {
             if ( customer == null || card == null || data == null )
                 return this;
-           // _sessionType = 
-            Customer newCustom = new Customer( customer.VWUserLgn, customer.VWUserPsw, null, null );
-            Data newData = new Data();
-            newData.SessionType = data.SessionType;
-            newData.OrderId = data.OrderId;
-            newData.Amount = data.Amount;
-            newData.IP = data.IP;
-            newData.ConfirmCode = data.ConfirmCode;
-            Card newCard = new Card();
-            if ( regCard )
-            {
-                newCard = new Card();
-                newCard.SecureCode = card.SecureCode;
-                newCard.CardId = card.CardId;
-            }
-            else
-            {
-                card.CardId = "FreePay";
-            }
-            if(Command == PaytureCommands.Init)
-            {
-                newCustom.PhoneNumber = customer.PhoneNumber;
-                newCustom.Email = customer.Email;
-                newData = new Data();
-                newData.SessionType = data.SessionType;
-                newData.IP = data.IP;
-                newData.TemplateTag = data.TemplateTag;
-                newData.Language = data.Language;
-                newData.Total = data.Total;    
-                newData.Product = data.Product;
-                newData.Amount = data.Amount;
-                if( data.SessionType == null ? SessionType.Add.toString() != null : !data.SessionType.equals(SessionType.Add.toString()) )
-                {
-                    newCard = new Card();
-                    newCard.CardId = card.CardId;
-                    newData.OrderId = data.OrderId;
-                }
-
-            }
-            String str = newCustom.getPropertiesString() + card.getPropertiesString() + newData.getPropertiesString() + data.CustomFields;
-            _requestKeyValuePair.put( PaytureParams.DATA, str );
-
-            expandTransaction(true, false);
-            _expanded = true;
-            return this;
+            _sessionType = SessionType.valueOf( data.SessionType );
+            card.CardId = "FreePay";
+            String str = customer.getPropertiesString() + card.getPropertiesString() + data.getPropertiesString() + data.CustomFields;
+            return expandInternal( PaytureParams.DATA, str );
         }
 
+
+        /** Expand transaction for EWallet Methods: Pay (Merchant side for REGISTERED card) 
+         * @param customer - Customer object
+         * @param cardId - CardId identifier in Payture system.
+         * @param secureCode CVC2/CVV2.
+         * @param data - Data object. SessionType and IP fields are required. Optional ConfimCode and CustomFields.
+         * @return current expanded transaction
+        */
+        public Transaction ExpandTransaction( Customer customer, String cardId, int secureCode, Data data ) throws IllegalArgumentException, IllegalAccessException
+        {
+            if ( customer == null || cardId == null || cardId.isEmpty() || data == null )
+                return this;
+            _sessionType = SessionType.valueOf( data.SessionType );
+            String str = customer.getPropertiesString() + String.format("%s=%s;", PaytureParams.CardId, cardId ) + String.format( "%s=%s;", PaytureParams.SecureCode, secureCode ) +  data.getPropertiesString()  + data.CustomFields;
+            return expandInternal( PaytureParams.DATA, str );
+        }
+        
+        /** Expand transaction for EWallet Methods: Init
+         * @param customer - Customer object
+         * @param cardId - CardId identifier in Payture system.
+         * @param data - Data object. SessionType and IP fields are required. Optional TamplateTag and Language.
+         * @return current expanded transaction
+        */
+        public Transaction ExpandTransaction( Customer customer, String cardId, Data data ) throws IllegalArgumentException, IllegalAccessException
+        {
+            if ( customer == null || data == null )
+                return this;
+            _sessionType = SessionType.valueOf( data.SessionType );
+            String str = customer.getPropertiesString() + ( cardId == null ? "" : String.format("%s=%s;", PaytureParams.CardId, cardId )) + data.getPropertiesString() + data.CustomFields;
+            return expandInternal( PaytureParams.DATA, str );
+        }        
+        
         /** Expand transaction for EWallet Methods: SendCode/Activate/Remove
          * @param customer - Customer object
          * @param cardId - pass CardId field from Card object
@@ -122,18 +109,15 @@ public class TransactionEWallet extends Transaction {
         {
             if ( customer == null || cardId == null || cardId.isEmpty() )
                 return this;
-
-            _requestKeyValuePair.put( PaytureParams.DATA, customer.getPropertiesString() + String.format("%s=%s;", PaytureParams.CardId, cardId ) 
+            
+            String str = customer.getPropertiesString() + String.format("%s=%s;", PaytureParams.CardId, cardId ) 
                 + ( amount != null && Command == PaytureCommands.Activate ? String.format("%s=%s;", PaytureParams.Amount, amount)  : "" )
-                    + (orderId == null ? "" : String.format("%s=%s;", PaytureParams.OrderId, orderId)));
-
-            expandTransaction(true, false);
-            _expanded = true;
-            return this;
+                + (orderId == null ? "" : String.format("%s=%s;", PaytureParams.OrderId, orderId));
+            return expandInternal( PaytureParams.DATA, str );
         }
 
         /** Expand transaction for InPay EWallet: Pay/Add (on Payture side)
-         * @param sessionId - value return in the Init method
+         * @param sessionId - Payment's identifier from Init response.
          * @return current expanded transaction
         */
         public Transaction expandTransaction( String sessionId )
@@ -144,5 +128,12 @@ public class TransactionEWallet extends Transaction {
             _expanded = true;
             return this;
         }
-    
+        
+            private Transaction expandInternal( PaytureParams field, String data )
+        {
+            _requestKeyValuePair.put( field, data );
+            expandTransaction( true, false );
+            _expanded = true;
+            return this;
+        }
 }
