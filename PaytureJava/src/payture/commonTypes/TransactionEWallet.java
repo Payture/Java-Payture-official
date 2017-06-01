@@ -74,7 +74,7 @@ public class TransactionEWallet extends Transaction {
          * @param data - Data object. SessionType and IP fields are required. Optional ConfimCode and CustomFields.
          * @return current expanded transaction
         */
-        public Transaction ExpandTransaction( Customer customer, String cardId, int secureCode, Data data ) throws IllegalArgumentException, IllegalAccessException
+        public Transaction expandTransaction( Customer customer, Data data , String cardId, int secureCode ) throws IllegalArgumentException, IllegalAccessException
         {
             if ( customer == null || cardId == null || cardId.isEmpty() || data == null )
                 return this;
@@ -89,7 +89,7 @@ public class TransactionEWallet extends Transaction {
          * @param data - Data object. SessionType and IP fields are required. Optional TamplateTag and Language.
          * @return current expanded transaction
         */
-        public Transaction ExpandTransaction( Customer customer, String cardId, Data data ) throws IllegalArgumentException, IllegalAccessException
+        public Transaction expandTransaction( Customer customer, String cardId, Data data ) throws IllegalArgumentException, IllegalAccessException
         {
             if ( customer == null || data == null )
                 return this;
@@ -128,6 +128,20 @@ public class TransactionEWallet extends Transaction {
             _expanded = true;
             return this;
         }
+        
+        /** Expand transaction for PaySubmit3DS
+         * @param MD - Unique transaction identifier from ACS response.
+         * @param paRes - An encrypted string with the result of 3DS Authentication.
+         * @return current expanded transaction
+        */
+        public Transaction ExpandTransaction( String MD, String paRes )
+        {
+            _requestKeyValuePair.put( PaytureParams.MD, MD );
+            _requestKeyValuePair.put( PaytureParams.PaRes, paRes );
+            _expanded = true;
+            return this;
+        }
+
         
             private Transaction expandInternal( PaytureParams field, String data )
         {
