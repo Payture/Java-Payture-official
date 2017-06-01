@@ -90,6 +90,24 @@ Call this for following PaytureCommands:
 | orderId          | Payment identifier in your service system.                        |
 | amount           | Amount of payment kopec. (in case of GetState or PayStatus pass null)                                          |
 
+Example for Charge:
+
+> Note Charge operation we're can make after the funds on Customer's card was blocked.
+```java
+
+String orderId = "TESTORD000000000000000000"; //pass in the transaction's OrderId used in PaytureCommands.Block operation.
+Integer amount = 7444444; //transaction's Amount used in PaytureCommands.Block
+
+//Create and expand transaction for Api:
+Transaction payTransactionApi = merchant.Api( PaytureCommands.Charge ).expandTransaction( orderId, amount );
+
+//Create and expand transaction for InPay:
+Transaction payTransactionInPay = merchant.InPay( PaytureCommands.Charge ).expandTransaction( orderId, amount );
+
+//Create and expand transaction for EWallet:
+Transaction payTransactionEWallet = merchant.EWallet( PaytureCommands.Charge ).expandTransaction( orderId, amount );
+```
+
 
 ### ExpandTransaction Methods for PaytureAPI
 #### expandTransaction( PayInfo info, HashMap<String, String> customFields, String customerKey, String paytureId  )
