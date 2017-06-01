@@ -76,6 +76,11 @@ public class PaytureTestApp {
             if(help.equalsIgnoreCase("help"))
             {
                 help();
+                System.out.println( "Type 'commands' for get command's list." );
+                String commands = input.nextLine();
+                if ( commands.equalsIgnoreCase("commands") )
+                    listCommands();
+                
                 System.out.println("Press enter for continue.");
                 input.nextLine();
             }
@@ -120,75 +125,49 @@ public class PaytureTestApp {
     {
         try{
         System.out.println( "Type the command:" );
-        String[] command = input.nextLine().split(" ");
-        if ( command.length < 1)
-            return;
+        String cmd = input.nextLine().toUpperCase();
         PaytureAPIType apiType = PaytureAPIType.api;//api type
-        String sessionType = "";
-        String transactionSide = "";
-        String regOrNoRegCard = "";
-        String cmd = command[0].toUpperCase();  //main command
-        String noPayCmd = "FIELDS COMMANDS CHANGEFIELDS HELP CHANGEMERCHANT";
-        if ( noPayCmd.indexOf(cmd) == -1 ){
-            try {
-                String api = command[1];
-                if(api.equalsIgnoreCase("EWALLET"))
-                    apiType = PaytureAPIType.vwapi;
-                else if(api.equalsIgnoreCase("INPAY"))
-                    apiType = PaytureAPIType.apim;
-            } catch (Exception ex){
-                ex.printStackTrace();
-            }
-        }
-        if ( command.length > 2 ){
-            if (  "I INIT P PAY".indexOf(cmd) != -1 ){
-                sessionType = command[ 2 ].toUpperCase().subSequence(0, 1).toString(); //session type
-                if ( ( cmd.equals("PAY") || cmd.equals("P") ) && command.length >= 3 && apiType == PaytureAPIType.vwapi ){
-                    transactionSide = command[3].toUpperCase().subSequence( 0, 1 ).toString();
-                    if(transactionSide.equals("M") && command.length > 3)
-                        regOrNoRegCard = command[ 4 ].toUpperCase().subSequence( 0, 1 ).toString();
-                }
-                else if("INIT".equals(cmd) || "I".equals(cmd)) { }
-                else return;
-            }
-            else if("ADD".equals(cmd))
-                transactionSide = command[2].toUpperCase().subSequence( 0, 1 ).toString();
-        }
-
+        
         switch ( cmd ){
             case "PAY":{
+                apiType = promtService( PaytureCommands.Pay );
                 if ( apiType == PaytureAPIType.api ){
                     payOrBlockAPI( PaytureCommands.Pay );
                     break;
                 }
-                switch( transactionSide ){
-                    case "P":{
-                        payturePayOrAdd( PaytureCommands.Pay );
-                        break;
-                    }
-                    case "M":{
-                        Customer customer = getCustomer();
-                        Data data = dataForInit(sessionType == "P" ? SessionType.Pay : SessionType.Block);          
-
-                        if(!regOrNoRegCard.equals("R")){
-                            Card card = getCard();
-                            response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, card, data, false).processOperation();
-                            break;
-                        }
-
-                        String cardId = allFields.get( PaytureParams.CardId );
-                        String secureCode = allFields.get( PaytureParams.SecureCode );
-                        System.out.println(String.format("CardId=%s; SecureCode=%s;", cardId, secureCode) );
-                        circleChanges( "CardId and SecureCode" );
-
-                        Card card = new Card();
-                        card.CardId = allFields.get(PaytureParams.CardId );
-                        card.SecureCode = Integer.getInteger(allFields.get( PaytureParams.SecureCode ));
-                        response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, card, data, true).processOperation();
-
-                        break;
-                    }
+                if( promtForUseSessionId( PaytureCommands.Pay ) ) {
+                    payturePayOrAdd( PaytureCommands.Pay );
+                    break;
                 }
+                
+                if( apiType == PaytureAPIType.apim ){
+                    System.out.println("PaytureCommands.Pay for PaytureInPay can be process only with SessionId payment's identifier after PaytureCommands.Init api method.\nCall Init and set SessionId parameter.");
+                    break;
+                }
+                    
+                //Only EWallet here
+                Customer customer = getCustomer();
+                Data data = dataForInit( promtSessionType( PaytureCommands.Pay, apiType ) );
+
+                boolean regCard = promtForUseRegCard();
+                if( !regCard ){
+                    //not registered card 
+                    Card card = getCard();
+                    response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, card, data).processOperation();
+                    break;
+                }
+                
+                String cardId = allFields.get( PaytureParams.CardId );
+                String secureCode = allFields.get( PaytureParams.SecureCode );
+                System.out.println(String.format("CardId=%s; SecureCode=%s;", cardId, secureCode) );
+                circleChanges( "CardId and SecureCode" );
+
+                Card card = new Card();
+                card.CardId = allFields.get(PaytureParams.CardId );
+                card.SecureCode = Integer.getInteger(allFields.get( PaytureParams.SecureCode ));
+                response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, data, allFields.get(PaytureParams.CardId),
+                        Integer.parseInt(allFields.get(PaytureParams.SecureCode))).processOperation();
+
                 break;
             }
             case "BLOCK":{
@@ -196,33 +175,35 @@ public class PaytureTestApp {
                 break;
             }
             case "CHARGE":{
-                chargeUnblockRefundGetState( PaytureCommands.Charge, apiType );
+                chargeUnblockRefundGetState( PaytureCommands.Charge );
                 break;
             }
             case "REFUND":{
-                chargeUnblockRefundGetState( PaytureCommands.Refund, apiType );
+                chargeUnblockRefundGetState( PaytureCommands.Refund );
                 break;
             }
             case "UNBLOCK":{
-                chargeUnblockRefundGetState( PaytureCommands.Unblock, apiType );
+                chargeUnblockRefundGetState( PaytureCommands.Unblock );
                 break;
             }
             case "GETSTATE":{
-                chargeUnblockRefundGetState( PaytureCommands.GetState, apiType );
+                chargeUnblockRefundGetState( PaytureCommands.GetState );
                 break;
             }
             case "PAYSTATUS":{
-                chargeUnblockRefundGetState( PaytureCommands.PayStatus, apiType );
+                chargeUnblockRefundGetState( PaytureCommands.PayStatus );
                 break;
             }
             case "INIT":{
-                SessionType t = "P".equals(sessionType) ? SessionType.Pay : "B".equals(sessionType)? SessionType.Block : SessionType.Add;
-                Data data = dataForInit(t);
-
-
+                apiType = promtService( PaytureCommands.Init );
+                SessionType sessionType = promtSessionType( PaytureCommands.Init, apiType );
+                Data data = dataForInit( sessionType );
+                
                 if ( apiType == PaytureAPIType.vwapi ){
                     Customer customer = getCustomer();
-                    response = _merchant.EWallet( PaytureCommands.Init ).expandTransaction( customer, new Card(), data, false ).processOperation();
+                    String cardId = allFields.get( PaytureParams.CardId );
+                    
+                    response = _merchant.EWallet( PaytureCommands.Init ).expandTransaction(customer, cardId, data).processOperation();
                 }
                 else
                     response = _merchant.InPay( PaytureCommands.Init ).expandTransaction( data ).processOperation();
@@ -260,19 +241,15 @@ public class PaytureTestApp {
                 break;
             }
             case "ADD": {
-                switch(transactionSide){
-                    case "P":{
-                        payturePayOrAdd( PaytureCommands.Add );
-                        break;
-                    }
-                    case "M":{
-                        Customer customer = getCustomer();
-                        Card card = getCard();
-
-                        response = _merchant.EWallet( PaytureCommands.Add ).expandTransaction(customer, card).processOperation();    
-                        break;
-                    }
+                if ( promtForUseSessionId( PaytureCommands.Add ) ){
+                    payturePayOrAdd( PaytureCommands.Add );
+                    break;
                 }
+
+                //EWallet add card on Merchant side
+                Customer customer = getCustomer();
+                Card card = getCard();
+                response = _merchant.EWallet( PaytureCommands.Add ).expandTransaction( customer, card ).processOperation();    
                 break;
             }
             case "FIELDS":{
@@ -299,8 +276,10 @@ public class PaytureTestApp {
                 help();
             }
         }
-       /* if ( "FIELDS CHANGEFIELDS COMMANDS CHANGEMERCHANT HELP".indexOf(cmd ) == -1 )
-            WriteResult( response );*/
+        if ( "FIELDS CHANGEFIELDS COMMANDS CHANGEMERCHANT HELP".indexOf(cmd ) == -1 ){
+            if( response != null )
+                WriteResult( response );
+        }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -407,8 +386,9 @@ public class PaytureTestApp {
 
         return customerFromCurrentSettings();
     }
-    private static void  chargeUnblockRefundGetState( PaytureCommands command, PaytureAPIType api )
+    private static void  chargeUnblockRefundGetState( PaytureCommands command )
     {
+        PaytureAPIType api = promtService( command );
         Transaction trans;
         String orderId = allFields.get(PaytureParams.OrderId);
         String amount = allFields.get( PaytureParams.Amount );
@@ -485,40 +465,35 @@ public class PaytureTestApp {
 
     public static void listCommands()
     {
-        System.out.println("Commands for help:\n" + 
-                    "\tfields\t\t- list current key-value pairs that used in request to Payture server.\n" +
-                    "\tchangefields\t\t- command for changing current values of  key-value pairs that used in request to Payture server.\n" + 
-                    "\tcommands\t\t- list avaliable commands for this console program.\n" + 
-                    "\tchangemerchant\t\t- commands for changing current merchant account settings.\n" +
-                    "\thelp\t\t- commands that types this text (description of commands that you can use in this console program.).\n\n");
-         System.out.println("Commands for invoke PaytureAPI functions.\n" +
-                    "\tpay\t-\n" +
-                    "\tblock\t- only for api\n" + 
-                    "\tcharge\t-\n" + 
-                    "\tunblock\t-\n" +
-                    "\trefund\t-\n" + 
-                    "\tgetsstate\t- only for api\n" +
-                    "\tpaystatus\t- for vwapi and apim\n" + 
-                    "\tinit\t-\n" + 
-                    "\tregister\t-\n" +
-                    "\tcheck\t-\n" + 
-                    "\tupdate\t-\n" + 
-                    "\tdelete\t-\n" +
-                    "\tadd\t-\n" +
-                    "\tactivate\t-\n" +   
-                    "\tsendcode\t-\n" +
-                    "\tremove\t-\n"  );
+        System.out.println(String.format("Commands for help:%1$s%1$s" + 
+                    "* fields - list current key-value pairs that used in request to Payture server.%1$s%1$s" +
+                    "* changefields - command for changing current values of  key-value pairs that used in request to Payture server.%1$s%1$s" + 
+                    "* commands - list avaliable commands for this console program.%1$s%1$s" + 
+                    "* changemerchant - commands for changing current merchant account settings.%1$s%1$s" +
+                    "* help - commands that types this text (description of commands that you can use in this console program.).%1$s%1$s%1$s", "\n" ));
+        System.out.println( String.format("Commands for invoke PaytureAPI functions.%1$s" +
+                    "* pay - use for one-stage payment. In EWALLET an INPAY api this command can be use for block funds - if you specify SessionType=Block.%1$s%1$s" +
+                    "* block - use for block funds on Customer card. After that command the funds can be charged by Charge command or unblocked by Unblock command. This command use only for API.%1$s%1$s" + 
+                    "* charge - write-off of funds from customer card.%1$s%1$s" + 
+                    "* unblock - unlocking of funds on customer card.%1$s%1$s" +
+                    "* refund - operation for refunds.%1$s%1$s" + 
+                    "* getsstate - use for getting the actual state of payments in Payture processing system. This command use only for API.%1$s%1$s" +
+                    "* paystatus - use for getting the actual state of payments in Payture processing system. This command use for EWALLET and INPAY.%1$s%1$s" + 
+                    "* init - use for payment initialization, customer will be redirected on Payture payment gateway page for enter card's information.%1$s%1$s" + 
+                    "* register - register new customer. This command use only for EWALLET.%1$s%1$s" +
+                    "* check - check for existing customer account in Payture system. This command use only for EWALLET.%1$s%1$s" + 
+                    "* update - This command use only for EWALLET.%1$s%1$s" + 
+                    "* delete - delete customer account from Payture system. This command use only for EWALLET.%1$s%1$s" +
+                    "* add - register new card in Payture system. This command use only for EWALLET.%1$s%1$s" +
+                    "* activate - activate registered card in Payture system. This command use only for EWALLET.%1$s%1$s" +   
+                    "* sendcode - provide additional authentication for customer payment. This command use only for EWALLET.%1$s%1$s" +
+                    "* remove - delete card from Payture system. This command use only for EWALLET.%1$s%1$s", "\n") );
     }
     
     public static void help()
     {
-        System.out.println("Then console promt you 'Type command' - you can type commands for invoke PaytureAPI functions and you can types commands for help.");
-        System.out.println("The structure of commands for invoke PaytureAPI functions:\n\t=>Fist keyword is one of avaliable command for PaytureAPI (like pay, block for example);\n");
-        System.out.println("\t=>For second keyword you must state the api type, one of following:\n\t\tapi - for PaytureAPI\n\t\tinpay - for PaytureInPay\n\t\tewallet - for PaytureEWallet\n\t\tapple - for PaytureApplePay\n\t\tandroid - for PaytureAndroidPay\n");
-        System.out.println("\t=>Third keyword is needed for specify:\n\t\tSessionType in 'init' command (can be 'pay', 'block', 'add').");
-        System.out.println("\t=>Fourth keyword used for specify transaction side for 'pay' ");
-        System.out.println("See commands description:\n\n");
-        listCommands();
+        System.out.println("\n\nThen console promt you 'Type command' - you can type commands for invoke PaytureAPI functions and you can types commands for help.");
+        System.out.println("After you type the command an appropriate method will be execute. If the data is not enough for execute the program promt for additional input.");
     }
 
     static void payOrBlockAPI( PaytureCommands command ) throws IllegalAccessException
@@ -532,11 +507,11 @@ public class PaytureTestApp {
         System.out.println(String.format( "\nPaytureId = %s\nCustomerKey = %s\nCustomFields = %s\n", 
                  paytureId, custKey, custFields ));
         circleChanges(null);
-        //response = _merchant.Api( command ).expandTransaction( payInfo, null, allFields.get(PaytureParams.CustomerKey), allFields.get(PaytureParams.PaytureId) ).processOperation();
+        response = _merchant.Api( command ).expandTransaction( payInfo, null, allFields.get(PaytureParams.CustomerKey), allFields.get(PaytureParams.PaytureId) ).processOperation();
         Transaction tr = _merchant.Api( command ).expandTransaction( payInfo, null, allFields.get(PaytureParams.CustomerKey), allFields.get(PaytureParams.PaytureId) );
-        TransactionAsync trAsync = new TransactionAsync(tr);
+       /* TransactionAsync trAsync = new TransactionAsync(tr);
         trAsync.processAsync();
-       /* while(!trAsync.ResponseReseived)
+        while(!trAsync.ResponseReseived)
         {
             try {
                 Thread.sleep(10);
@@ -577,4 +552,78 @@ public class PaytureTestApp {
         }
         return result;
     }
+    
+    //region Simple promts methods
+    static PaytureAPIType promtService( PaytureCommands command )
+    {
+        String outpt = "Type the service api type: ewallet, inpay";
+        if( command == PaytureCommands.Pay )
+            outpt += " or api";
+        System.out.println( outpt );
+        String service = input.nextLine();
+        if ( service.equalsIgnoreCase("EWALLET") || service.equalsIgnoreCase("E") )
+            return PaytureAPIType.vwapi;
+        else if ( service.equalsIgnoreCase("INPAY") || service.equalsIgnoreCase("I") )
+            return PaytureAPIType.apim;
+        else if ( service.equalsIgnoreCase("API") || service.equalsIgnoreCase("A") )
+            return PaytureAPIType.api;
+        else
+        {
+            System.out.println( "Illegal service. Only API, EWALLET or INPAY avaliable." );
+            return promtService( command );
+        }
+    }
+
+    static SessionType promtSessionType( PaytureCommands command, PaytureAPIType api )
+    {
+        String outpt = "Pay, Block";
+        if( command == PaytureCommands.Init && api == PaytureAPIType.vwapi )
+            outpt += " or Add";
+            
+        System.out.println( "Specify The SessionType: " + outpt );
+        String session = input.nextLine();
+        if ( session.equalsIgnoreCase("PAY") || session.equalsIgnoreCase("P") )
+            return SessionType.Pay;
+        else if ( session.equalsIgnoreCase("BLOCK") || session.equalsIgnoreCase("B") )
+            return SessionType.Block;
+        else if ( session.equalsIgnoreCase("ADD") || session.equalsIgnoreCase("A") )
+            return SessionType.Add;
+        else
+        {
+            System.out.println( "Illegal Session Type. Only pay, block or add avaliable." );
+            return promtSessionType( command, api );
+        }
+    }
+
+    static boolean promtForUseRegCard()
+    {
+        System.out.println( "Use registered card?  Note: type yes/no or y/n:" );
+        String regCard = input.nextLine();
+        if ( regCard.equalsIgnoreCase("YES") || regCard.equalsIgnoreCase("Y") )
+            return true;
+        else if ( regCard.equalsIgnoreCase("NO") || regCard.equalsIgnoreCase("N") )
+            return false;
+        else
+        {
+            System.out.println( "Illegal input. Type yes/no or y/n for specify necessity of using registered card." );
+            return promtForUseRegCard();
+        }
+    }
+
+
+    static boolean promtForUseSessionId( PaytureCommands command )
+    {
+        System.out.println( String.format("Use SessionId for %s command?  Note: type yes/no or y/n:", command ) );
+        String useSessionId = input.nextLine();
+        if ( useSessionId.equalsIgnoreCase("YES") || useSessionId.equalsIgnoreCase("Y") )
+            return true;
+        else if ( useSessionId.equalsIgnoreCase("NO") || useSessionId.equalsIgnoreCase("N") )
+            return false;
+        else
+        {
+            System.out.println( String.format( "Illegal input. Type yes/no or y/n for specify necessity of using SessionId in %s operation.", command ) );
+            return promtForUseSessionId( command );
+        }
+    }
+    //endregion Simple promts methods
 }
