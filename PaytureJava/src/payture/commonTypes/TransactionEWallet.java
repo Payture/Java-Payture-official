@@ -39,7 +39,7 @@ public class TransactionEWallet extends Transaction {
          * @return current expanded transaction
         */
         public Transaction expandTransaction( Customer customer ) throws IllegalArgumentException, IllegalAccessException
-        {
+        {    
             if ( _expanded )
                 return this;
             String str;
@@ -50,6 +50,8 @@ public class TransactionEWallet extends Transaction {
             return expandInternal( PaytureParams.DATA, str );
         }
 
+        
+        
         /** Expand transaction for EWallet Methods: Pay (Merchant side for NOT REGISTERED card)
          * @param customer - Customer object
          * @param card - Card object. Specify in it all fields exclude CardId.
