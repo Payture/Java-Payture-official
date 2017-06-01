@@ -98,11 +98,11 @@ public class TransactionEWallet extends Transaction {
             return expandInternal( PaytureParams.DATA, str );
         }        
         
-        /** Expand transaction for EWallet Methods: SendCode/Activate/Remove
-         * @param customer - Customer object
-         * @param cardId - pass CardId field from Card object
-         * @param amount - pass null for Remove method, otherwise pass amount for current transaction in kopec
-         * @param orderId - pass null for Remove method, in over cases pass current transaction OrderId
+        /** Expand transaction for EWallet Methods: SendCode/Activate
+         * @param customer - Customer object.
+         * @param cardId - pass CardId field from Card object.
+         * @param amount - amount for current transaction in kopec.
+         * @param orderId - current transaction identifier.
          * @return current expanded transaction
         */
         public Transaction expandTransaction( Customer customer, String cardId, Integer amount, String orderId ) throws IllegalArgumentException, IllegalAccessException
@@ -112,10 +112,25 @@ public class TransactionEWallet extends Transaction {
             
             String str = customer.getPropertiesString() + String.format("%s=%s;", PaytureParams.CardId, cardId ) 
                 + ( amount != null && Command == PaytureCommands.Activate ? String.format("%s=%s;", PaytureParams.Amount, amount)  : "" )
-                + (orderId == null ? "" : String.format("%s=%s;", PaytureParams.OrderId, orderId));
+                + ( orderId == null ? "" : String.format("%s=%s;", PaytureParams.OrderId, orderId));
             return expandInternal( PaytureParams.DATA, str );
         }
 
+        
+        /** Expand transaction for EWallet Methods: Remove
+         * @param customer - Customer object
+         * @param cardId - pass CardId field from Card object
+         * @return current expanded transaction
+        */
+        public Transaction expandTransaction( Customer customer, String cardId ) throws IllegalArgumentException, IllegalAccessException
+        {
+            if ( customer == null || cardId == null || cardId.isEmpty() )
+                return this;
+            
+            String str = customer.getPropertiesString() + String.format("%s=%s;", PaytureParams.CardId, cardId );
+            return expandInternal( PaytureParams.DATA, str );
+        }
+        
         /** Expand transaction for InPay EWallet: Pay/Add (on Payture side)
          * @param sessionId - Payment's identifier from Init response.
          * @return current expanded transaction

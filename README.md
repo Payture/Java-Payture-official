@@ -115,7 +115,7 @@ PayInfo payInfo = new PayInfo(
      20, //expiration year, required
      "Test Test", // cardholder name, required
      123, // secure code, required
-     "TestOrder0000000000512154545", // payment's identifier in Merchant system
+     "TestOrder0000000000512154545", // payment's identifier in Merchant system, required
      41000 //amount, required
 );
 HashMap<String, Object> customFields = new HashMap<String, Object>(); //optional, can be null 
@@ -213,7 +213,7 @@ int secureCode = 123; // required
 long amount = 102000; // in kopec, required
 String ip = "93.45.120.14"; // required
 String confirmCode = "SomeCoolProduct"; // optional, maybe empty or null
-String customFields = ""; // optional maybe null
+String[] customFields = new String[5] ; // optional maybe null or contain arbitrary fields of you chose
 Customer customer = new Customer( "testCustomerEW", "testPass" ); //required
 Data data = new Data ( sessionType, orderId, amount, ip ) // required
 data.ConfirmCode = confirmCode;
@@ -308,7 +308,7 @@ Transaction secondTransaction = merchant.EWallet( PaytureCommands.Reqister ).exp
 
 
 
-#### expandTransaction( Customer customer, String cardId, Integer amount, String orderId  ) ????????????????????????????????????????????????????/////
+#### expandTransaction( Customer customer, String cardId, Integer amount, String orderId  ) 
 This overload is called for api methods: 
 * **SendCode** (PaytureCommands.SendCode). You need to specify all parameters include orderId.
 Example:
@@ -329,8 +329,11 @@ String cardId = "40252318-de07-4853-b43d-4b67f2cd2077";
 long amount = 100; //pass small amount for activate
 
 //Create and expand transaction 
-Transaction activateTransaction = merchant.EWallet( PaytureCommands.Activate ).expandTransaction( customer, cardId, amount );
+Transaction activateTransaction = merchant.EWallet( PaytureCommands.Activate ).expandTransaction( customer, cardId, amount, null );
 ```
+
+#### expandTransaction( Customer customer, String cardId )
+This overload is called for api method: 
 * **Remove** (PaytureCommands.Remove). You need to specify customer and cardId only for this operation. For amount pass null.
 Example:
 ```java
@@ -338,9 +341,8 @@ Customer customer = new Customer( "testCustomerEW", "testPass" );
 String cardId = "40252318-de07-4853-b43d-4b67f2cd2077";
 
 //Create and expand transaction 
-Transaction removeTransaction = merchant.EWallet( PaytureCommands.Remove ).expandTransaction( customer, cardId, null );
+Transaction removeTransaction = merchant.EWallet( PaytureCommands.Remove ).expandTransaction( customer, cardId, null, null );
 ```
-
 
 #### expandTransaction( String sessionId )
 This overload is called for api methods: 
