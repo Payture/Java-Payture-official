@@ -17,8 +17,7 @@ public class PayInfo extends EncodeString {
     public Integer SecureCode;
     public String OrderId;
     public long Amount;
-    public PayInfo( String pan, Integer eMonth, Integer eYear, String cardHolder, Integer secureCode, String ordId, long amount )
-    {
+    public PayInfo( String pan, Integer eMonth, Integer eYear, String cardHolder, Integer secureCode, String ordId, long amount ){
         PAN = pan;
         EMonth = eMonth;
         EYear = eYear;

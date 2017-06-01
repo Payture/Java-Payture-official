@@ -24,12 +24,8 @@ public class Data extends EncodeString {
         public String ConfirmCode;
         public String CustomFields;
         
-        public Data(SessionType sessionType, String orderId, long amount, String ip, String product, Integer total, String url,String template, String lang )
-        {
-            SessionType = ("None".equals(sessionType.toString())  ? null : sessionType.toString());
-            OrderId = orderId;
-            Amount = amount;
-            IP = ip;
+        public Data(SessionType sessionType, String orderId, long amount, String ip, String product, Integer total, String url,String template, String lang ){
+            this( sessionType, orderId, amount, ip );
             TemplateTag = template;
             Language = lang;
             Url = url;
@@ -50,5 +46,19 @@ public class Data extends EncodeString {
             CustomFields = ( customFields == null ? null : resultStr );
         }
         
-        public Data(){}
+        public Data( SessionType sessionType, String orderId, long amount, String ip ) {
+            SessionType = ( "None".equals(sessionType.toString())  ? null : sessionType.toString() );
+            OrderId = orderId;
+            Amount = amount;
+            IP = ip;
+        }
+        
+        public Data( SessionType sessionType, String ip, String templateTag, String language ){
+            SessionType = ("None".equals(sessionType.toString())  ? null : sessionType.toString());
+            TemplateTag = templateTag;
+            Language = language;
+            IP = ip;
+        }
+        
+        public Data() {}
 }

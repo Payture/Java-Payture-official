@@ -14,11 +14,15 @@ public class Customer extends EncodeString {
     public String VWUserPsw;
     public String PhoneNumber;
     public String Email;
-    public Customer( String login, String password, String phone, String email )
-    {
-        VWUserLgn = login;
-        VWUserPsw = password;
+    
+    public Customer( String login, String password, String phone, String email ){
+        this( login, password );
         PhoneNumber = phone;
         Email = email;
+    }
+    
+    public Customer( String login, String password ){
+        VWUserLgn = login;
+        VWUserPsw = password;
     }
 }
