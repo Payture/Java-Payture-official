@@ -93,7 +93,11 @@ Call this for following PaytureCommands:
 
 ### ExpandTransaction Methods for PaytureAPI
 #### expandTransaction( PayInfo info, HashMap<String, String> customFields, String customerKey, String paytureId  )
-This overload you call for api **Pay** or **Block** methods ( PaytureCommands.Pay or PaytureCommands.Block respectively )
+This overload you call for api methods:
+* **Pay** (PaytureCommands.Pay).
+* **Block** (PaytureCommands.Block).
+
+
 Description of provided params.
 
 | Parameter's name | Definition                                                                             |
@@ -102,6 +106,28 @@ Description of provided params.
 | customerKey      | Customer identifier in Payture AntiFraud system.                                       |
 | customFields     | Addition fields for processing (especially for AntiFraud system).                      |
 | paytureId        | Payments identifier in Payture AntiFraud system.                                       |
+
+Example for Pay:
+```java
+PayInfo payInfo = new PayInfo(
+    "4111111111111112", // card number, required
+     10, //expiration month, required
+     20, //expiration year, required
+     "Test Test", // cardholder name, required
+     123, // secure code, required
+     "TestOrder0000000000512154545", // payment's identifier in Merchant system
+     41000 //amount, required
+);
+HashMap<String, Object> customFields = new HashMap<String, Object>(); //optional, can be null 
+customFields.put( "IP", "93.120.05.36" );
+customFields.put( "Description", "SomeUsefullHere" );
+
+String customerKey = "testKey"; // 
+String paytureId = ""; //optional 
+
+//Create and expand transaction 
+Transaction payTransaction = merchant.Api( PaytureCommands.Pay ).expandTransaction( payInfo, customFields, customerKey, paytureId );
+```
 
 
 ### ExpandTransaction Methods for PaytureInPay
@@ -113,26 +139,241 @@ You must specify following fields of Data object then call Init api method of Pa
 * OrderId
 * Amount
 * IP
-Other fields is optional.
+
+Other fields is optional.  Example:
+```java
+String orderId = "TESTORD000000000000000000";
+long amount = 102000; // in kopec
+String ip = "93.45.120.14";
+Data data = new Data( SessionType.Pay, orderId, amount, ip );
+
+//Create and expand transaction 
+Transaction initTransaction = merchant.InPay( PaytureCommands.Init ).expandTransaction( data );
+```
+> Please note that the response from Init method will be contain SessionId - the unique payment's identifier - further you need to use it in PaytureCommands.Pay  api method for proseccing transaction on Payture side: call manually (suppose, we're have sessionId value from Init):
+*  merchant.EWallet( PaytureCommands.Pay ).expandTransaction( sessionId ) - use for SessionType=Pay or SessionType=Block
+
+> To do the same thing you can take value from response's RedirectURL property - which is string representation of Url constracted for you (a value in RedirectURL will be set only in PaytureCommands.Init response, in over cases it has null value)  - and just redirect customer to this address.
 
 
 ### ExpandTransaction Methods for PaytureEWallet
-#### expandTransaction( Customer customer, Card card, Data data, boolean regCard ) 
-This overload you call for api **Init**, **Pay** (on merchant side for registered or no registered cards);
+#### expandTransaction( Customer customer, String cardId, Data data ) 
+This overload you call for api 
+* **Init** (PaytureCommands.Init). 
+
+Example for SessionType=Pay and SessionType=Block:
+```java
+String cardId = "40252318-de07-4853-b43d-4b67f2cd2077";
+Customer customer = new Customer( "testCustomerEW", "testPass" ); 
+SessionType sessionType = SessionType.Pay; //= SessionType.Block,  required
+String orderId = "TESTORD000000000000000000"; // required
+long amount = 102000; // in kopec, required
+String ip = "93.45.120.14"; // required
+String product = "SomeCoolProduct"; // optional, maybe empty or null
+String total = amount; // optional, maybe empty or null
+String template = "tempTag"; // optional, maybe empty or null
+String lang = "RU"; // optional, maybe empty or null
+Data data = new Data ( sessionType, orderId, amount, ip, product, total, template, lang ) // required
+
+//Create and expand transaction 
+Transaction initPayTransaction =merchant.EWallet( PaytureCommands.Init ).expandTransaction( customer, cardId, data ); //SessionType=Pay or SessionType=Block
+```
+
+
+Example for SessionType=Add:
+```java
+String cardId = null; //we're pass null for Add SessionType
+Customer customer = new Customer( "testCustomerEW", "testPass" ); 
+SessionType sessionType = SessionType.Add; //  required
+Stringvar ip = "93.45.120.14"; // required
+String template = "tempTag"; // optional, maybe empty or null
+String lang = "RU"; // optional, maybe empty or null
+Data data = new Data ( sessionType, ip, template, lang ); // required
+
+//Create and expand transaction 
+Transaction initAddTransaction = merchant.EWallet( PaytureCommands.Init ).expandTransaction( customer, null, data ); // SessionType=Add
+```
+
+> Please note that the response from Init method will be contain SessionId - the unique payment's identifier - further you need to use it in PaytureCommands.Pay or PaytureCommands.Add api methods for proseccing transaction on Payture side: call manually (suppose, we're have sessionId value from Init):
+*  merchant.EWallet( PaytureCommands.Pay ).expandTransaction( sessionId ); - use for SessionType=Pay or SessionType=Block
+*  merchant.EWallet( PaytureCommands.Add ).expandTransaction( sessionId ); - use for SessionType=Add 
+
+> To do the same thing you can take value from response's RedirectURL property - which is string representation of Url constracted for you (a value in RedirectURL will be set only in PaytureCommands.Init response, in over cases it has null value)  - and just redirect customer to this address.
+
+#### expandTransaction( Customer customer, Data data, String cardId, int secureCode ) 
+This overload you call for api 
+* **Pay** (PaytureCommands.Pay) - on Merchant side for REGISTERED card
+
+Example for SessionType=Pay and SessionType=Block:
+```java
+SessionType sessionType = SessionType.Pay; //= SessionType.Block,  required
+String orderId = "TESTORD000000000000000000"; // required
+String cardId = "40252318-de07-4853-b43d-4b67f2cd2077"; // required
+int secureCode = 123; // required
+long amount = 102000; // in kopec, required
+String ip = "93.45.120.14"; // required
+String confirmCode = "SomeCoolProduct"; // optional, maybe empty or null
+String customFields = ""; // optional maybe null
+Customer customer = new Customer( "testCustomerEW", "testPass" ); //required
+Data data = new Data ( sessionType, orderId, amount, ip ) // required
+data.ConfirmCode = confirmCode;
+data.CustomFields = customFields;
+
+//Create and expand transaction 
+Transaction payTransaction = merchant.EWallet( PaytureCommands.Pay ).expandTransaction( customer, data, cardId, secureCode);
+
+```
+#### expandTransaction( Customer customer, Card card, Data data ) 
+This overload you call for api 
+* **Pay** (PaytureCommands.Pay) - on Merchant side for NOT REGISTERED card
+
+Example for SessionType=Pay and SessionType=Block:
+```java
+SessionType sessionType = SessionType.Pay; //= SessionType.Block,  required
+String orderId = "TESTORD000000000000000000"; // required
+long amount = 102000; // in kopec, required
+String ip = "93.45.120.14"; // required
+String confirmCode = "SomeCoolProduct"; // optional, maybe empty or null
+String customFields = ""; // optional maybe null
+Data data = new Data ( sessionType, orderId, amount, ip ) // required
+data.ConfirmCode = confirmCode;
+data.CustomFields = customFields;
+
+Customer customer = new Customer( "testCustomerEW", "testPass" ); //required
+
+Card card = new Card( 
+    "4111111111111112", //card number
+    10, //expiration month
+    20, //expiration year
+    "Card Holder", //CardHolder Name
+    111, //secure code
+); //required
+
+//Create and expand transaction 
+Transaction payTransaction = merchant.EWallet( PaytureCommands.Pay ).expandTransaction( customer, card, data );
+
+```
 
 #### expandTransaction( Customer customer, Card card )
-This overload you call for api **Add** method ( PaytureCommand.Add ) on merchant side.
+This overload you call for api
+* **Add** method ( PaytureCommand.Add ) on Merchant side.
+
+Example:
+```java
+Customer customer = new Customer( "testCustomerEW", "testPass" ); //required
+Card card = new Card( 
+    "4111111111111112", //card number
+    10, //expiration month
+    20, //expiration year
+    "Card Holder", //CardHolder Name
+    111, //secure code
+); //required
+
+//Create and expand transaction 
+Transaction addTransaction = merchant.EWallet( PaytureCommands.Add ).expandTransaction( customer, card );
+```
+
+Please note, that you can add card *only for registered customer*.
+
 
 #### expandTransaction( Customer customer )
-This overload is called for following api methods: **Register** (PaytureCommands.Register), **Update** (PaytureCommands.Update), **Delete** (PaytureCommands.Delete), **Check** (PaytureCommands.Check), **GetList** (PaytureCommands.GetList)
+This overload is called for following api methods:
+
+* **Register** (PaytureCommands.Register),
+* **Update** (PaytureCommands.Update), 
+* **Delete** (PaytureCommands.Delete), 
+* **Check** (PaytureCommands.Check), 
+* **GetList** (PaytureCommands.GetList)
+
 Description of recieved [Customer data see here](#Customer).
 
-#### expandTransaction( Customer customer, String cardId, Integer amount, String orderId )
-This overload is called for api methods: **SendCode** (PaytureCommands.SendCode), **Activate** (PaytureCommands.Activate), **Remove** (PaytureCommands.Remove)
+Example for PaytureCommands.Register:
+
+```java
+Customer firstCustomer = new Customer( 
+    "testCustomerEW", // login, required
+    "testPass", //password, required
+     ); 
+Customer secondCustomer = new Customer( 
+    "testCustomerEW", 
+    "testPass", 
+    "78456865353", //phone, optional
+    "newCustTest@gmailTest@.ru" // email, optional
+     );
+
+//Create and expand transaction  
+Transaction firstTransaction = merchant.EWallet( PaytureCommands.Reqister ).expandTransaction( firstCustomer );
+Transaction secondTransaction = merchant.EWallet( PaytureCommands.Reqister ).expandTransaction( secondCustomer );
+```
+
+
+
+#### expandTransaction( Customer customer, String cardId, Integer amount, String orderId  ) ????????????????????????????????????????????????????/////
+This overload is called for api methods: 
+* **SendCode** (PaytureCommands.SendCode). You need to specify all parameters include orderId.
+Example:
+```java
+Customer customer = new Customer( "testCustomerEW", "testPass" ); 
+String cardId = "40252318-de07-4853-b43d-4b67f2cd2077";
+long amount = 50000; 
+String orderId = "TESTORD000000000000000000";
+
+//Create and expand transaction 
+Transaction sendCodeTransaction = merchant.EWallet( PaytureCommands.SendCode ).expandTransaction( customer, cardId, amount, orderId );
+```
+* **Activate** (PaytureCommands.Activate). Specify customer, cardId and amount for this operation.
+Example:
+```java
+Customer customer = new Customer( "testCustomerEW", "testPass" ); 
+String cardId = "40252318-de07-4853-b43d-4b67f2cd2077";
+long amount = 100; //pass small amount for activate
+
+//Create and expand transaction 
+Transaction activateTransaction = merchant.EWallet( PaytureCommands.Activate ).expandTransaction( customer, cardId, amount );
+```
+* **Remove** (PaytureCommands.Remove). You need to specify customer and cardId only for this operation. For amount pass null.
+Example:
+```java
+Customer customer = new Customer( "testCustomerEW", "testPass" ); 
+String cardId = "40252318-de07-4853-b43d-4b67f2cd2077";
+
+//Create and expand transaction 
+Transaction removeTransaction = merchant.EWallet( PaytureCommands.Remove ).expandTransaction( customer, cardId, null );
+```
+
+
+#### expandTransaction( String sessionId )
+This overload is called for api methods: 
+* **Pay** (PaytureCommands.Pay). On Payture side
+* **Add** (PaytureCommands.Add). On Payture side
+
+Example for PaytureCommands.Pay:
+```java
+String sessionId = "e5c43d9f-2646-42bc-aeec-0b9005ceb972"; //received from PaytureCommands.Init 
+
+//Create and expand transaction 
+Transaction payTransaction = merchant.EWallet( PaytureCommands.Pay ).expandTransaction( sessionId );
+```
+
+#### ExpandTransaction( String MD, String paRes )
+This overload is called for api methods: 
+* **PaySubmut3DS** (PaytureCommands.PaySubmit3DS).
+Example for:
+```java
+String md = "20150624160356619170 "; //received from ACS 
+String pares = "ODJhYTk0NGUtMDk0ZlKJjjhbjlsrglJKJHNFKSRFLLkjnksdfjgdlgkd.... "; //received from ACS 
+
+//Create and expand transaction 
+Transaction submitTransaction = merchant.EWallet( PaytureCommands.PaySubmit3DS ).expandTransaction( md, pares );
+```
+
 
 ### ExpandTransaction Methods for PaytureApplePay and PaytureAndroidPay
 #### expandTransaction(String payToken, String orderId, Integer amount)
-This overload you call for api **Pay** (PaytureCommands.Pay) and **Block** (PaytureCommands.Block) methods.
+This overload you call for api methods:
+* **Pay** (PaytureCommands.Pay).
+* **Block** (PaytureCommands.Block).
+
 Description of provided params.
 
 | Parameter's name | Definition                                                                             |
@@ -183,9 +424,8 @@ This object used for PaytureEWallet and consist of following fields:
 
 Examples of creation instance of Card:
 ```java
-Card card = new Card( "4111111111111112", 10, 20, "Test Test", 123, null ); //create card with CardId = null
-Card card2 = new Card( "4111111111111112", 10, 20, "Test Test", 123, "40252318-de07-4853-b43d-4b67f2cd2077" ); //create card with CardId = "40252318-de07-4853-b43d-4b67f2cd2077"
-Card card3 = new Card( null, null, null, null, 123, "40252318-de07-4853-b43d-4b67f2cd2077" );  //this used in PaytureCommand.Pay on merchant side
+Card card = new Card( "4111111111111112", 10, 20, "Test Test", 123 ); //create card with CardId = null
+Card cardWithId = new Card( "4111111111111112", 10, 20, "Test Test", 123, "40252318-de07-4853-b43d-4b67f2cd2077" ); //create card with CardId = "40252318-de07-4853-b43d-4b67f2cd2077"
 ```
 ### Data <a id="Data"></a>
 This is object used for PaytureEWallet and PaytureInPay, consist of following fields 
@@ -212,8 +452,8 @@ PaytureCommands list and availability in every api type
 
 | Command      | Api | InPay | EWallet | Apple | Android | Description                                                                                                            |
 | ------------ | --- | ----- | ------- | ----- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Pay          |  +  |   +   |    +    |       |         | Command for pay transaction. In InPay and EWallet can be used for Block operation                                      |
-| Block        |  +  |       |         |       |         | Block of funds on customer card. You can write-off of funds by Charge command or unlocking of funds by Unblock command |
+| Pay          |  +  |   +   |    +    |   +   |    +    | Command for pay transaction. In InPay and EWallet can be used for Block operation                                      |
+| Block        |  +  |       |         |   +   |    +    | Block of funds on customer card. You can write-off of funds by Charge command or unlocking of funds by Unblock command |
 | Charge       |  +  |   +   |    +    |       |         | Write-off of funds from customer card                                                                                  |
 | Refund       |  +  |   +   |    +    |       |         | Operation for refunds                                                                                                  |
 | Unblock      |  +  |   +   |    +    |       |         | Unlocking of funds  on customer card                                                                                   |
@@ -229,11 +469,10 @@ PaytureCommands list and availability in every api type
 | Remove       |     |       |    +    |       |         | Delete card from Payture system                                                                                        |
 | GetList      |     |       |    +    |       |         | Return list of registered cards for the customer existed in Payture system                                             |
 | SendCode     |     |       |    +    |       |         | Additional authentication for customer payment                                                                         |
-| ApplePay     |     |       |         |       |         | Command for one-stage charge for Apple                                                                                 |
-| AppleBlock   |     |       |         |       |         | Block of funds on customer card attached in Apple Wallet                                                               |
-| Pay3DS       |  +  |       |         |   +   |    +    | Command for one-stage charge from card with 3-D Secure                                                                 |
-| Block3DS     |  +  |       |         |   +   |    +    | Block of funds on customer card with 3-D Secure                                                                        |
+| Pay3DS       |  +  |       |         |       |         | Command for one-stage charge from card with 3-D Secure                                                                 |
+| Block3DS     |  +  |       |         |       |         | Block of funds on customer card with 3-D Secure                                                                        |
 | PaySubmit3DS |     |       |    +    |       |         | Commands for completed charging funds from card with 3-D Secure                                                        |
+
 
 
 ### Customer <a id="Customer"></a>

@@ -17,15 +17,15 @@ public class EncodeString {
     * @return  String. Sample Field1=Value1;Field2=Value2;Field3=Value3;
     */   
     public String getPropertiesString() throws IllegalArgumentException, IllegalAccessException        
-        {           
-            Field[] fields = this.getClass().getFields();            
-            String result = "";            
-            for (Field field : fields) {                
-                Object val = field.get(this);                
-                if (val != null) {                    
-                    result += String.format("%s=%s;", field.getName(), val);                
-                }            
+    {           
+        Field[] fields = this.getClass().getFields();            
+        String result = "";            
+        for (Field field : fields) {                
+            Object val = field.get(this);                
+            if (val != null) {                    
+                result += String.format("%s=%s;", field.getName(), val);                
             }            
-            return result;        
+        }            
+        return result;        
     }
 }

@@ -17,15 +17,16 @@ public class Card extends EncodeString {
     public String CardHolder;
     public Integer SecureCode;
 
-    public Card( String cardNum, Integer eMonth, Integer eYear, String cardHolder, Integer secureCode, String cardId )
-    {
-        CardNumber = cardNum;
+    public Card( String cardNumber, Integer eMonth, Integer eYear, String cardHolder, Integer secureCode ) {
+        CardNumber = cardNumber;
         EMonth = eMonth;
         EYear = eYear;
         CardHolder = cardHolder;
         SecureCode = secureCode;
+    }
+    
+    public Card( String cardNumber, Integer eMonth, Integer eYear, String cardHolder, Integer secureCode, String cardId ) {
+        this( cardNumber, eMonth, eYear, cardHolder, secureCode );
         CardId = cardId;
     }
-
-    public Card() { }
 }

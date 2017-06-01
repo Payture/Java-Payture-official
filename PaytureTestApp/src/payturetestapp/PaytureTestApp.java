@@ -162,9 +162,7 @@ public class PaytureTestApp {
                 System.out.println(String.format("CardId=%s; SecureCode=%s;", cardId, secureCode) );
                 circleChanges( "CardId and SecureCode" );
 
-                Card card = new Card();
-                card.CardId = allFields.get(PaytureParams.CardId );
-                card.SecureCode = Integer.getInteger(allFields.get( PaytureParams.SecureCode ));
+                
                 response = _merchant.EWallet( PaytureCommands.Pay ).expandTransaction(customer, data, allFields.get(PaytureParams.CardId),
                         Integer.parseInt(allFields.get(PaytureParams.SecureCode))).processOperation();
 
@@ -338,15 +336,15 @@ public class PaytureTestApp {
 
     static Data dataFromCurrentSettings()
     {
-        Data data = new Data();
-        data.Amount = allFields.get( PaytureParams.Amount ) == null ? null : Integer.parseInt( allFields.get( PaytureParams.Amount ) );
-        data.IP = allFields.get( PaytureParams.IP );
-        data.Language = allFields.get( PaytureParams.Language );
-        data.OrderId = allFields.get( PaytureParams.OrderId );
-        data.SessionType = allFields.get( PaytureParams.SessionType );
-        data.TemplateTag = allFields.get( PaytureParams.TemplateTag );
-        data.Total = Integer.parseInt( allFields.get( PaytureParams.Amount ));
-        data.Product = allFields.get( PaytureParams.Product );
+        Data data = new Data(SessionType.valueOf( allFields.get( PaytureParams.SessionType )),
+        allFields.get( PaytureParams.OrderId ),
+        allFields.get( PaytureParams.Amount ).isEmpty() ? 0 : Integer.parseInt(allFields.get( PaytureParams.Amount ) ),
+        allFields.get( PaytureParams.IP ),
+        allFields.get( PaytureParams.Product ),
+        allFields.get( PaytureParams.Amount ).isEmpty() ? 0 : Integer.parseInt(allFields.get( PaytureParams.Amount ) ),
+        allFields.get( PaytureParams.Url ),
+        allFields.get( PaytureParams.TemplateTag ),
+        allFields.get( PaytureParams.Language ));
         return  data;
     }
 
