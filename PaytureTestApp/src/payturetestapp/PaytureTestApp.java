@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import payture.commonTypes.*;
 import payture.paytureEnums.*;
 import payture.typesForEncoding.*;
@@ -297,8 +299,8 @@ public class PaytureTestApp {
                 help();
             }
         }
-        if ( "FIELDS CHANGEFIELDS COMMANDS CHANGEMERCHANT HELP".indexOf(cmd ) == -1 )
-            WriteResult( response );
+       /* if ( "FIELDS CHANGEFIELDS COMMANDS CHANGEMERCHANT HELP".indexOf(cmd ) == -1 )
+            WriteResult( response );*/
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -530,7 +532,19 @@ public class PaytureTestApp {
         System.out.println(String.format( "\nPaytureId = %s\nCustomerKey = %s\nCustomFields = %s\n", 
                  paytureId, custKey, custFields ));
         circleChanges(null);
-        response = _merchant.Api( command ).expandTransaction( payInfo, null, allFields.get(PaytureParams.CustomerKey), allFields.get(PaytureParams.PaytureId) ).processOperation();
+        //response = _merchant.Api( command ).expandTransaction( payInfo, null, allFields.get(PaytureParams.CustomerKey), allFields.get(PaytureParams.PaytureId) ).processOperation();
+        Transaction tr = _merchant.Api( command ).expandTransaction( payInfo, null, allFields.get(PaytureParams.CustomerKey), allFields.get(PaytureParams.PaytureId) );
+        TransactionAsync trAsync = new TransactionAsync(tr);
+        trAsync.processAsync();
+       /* while(!trAsync.ResponseReseived)
+        {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        response = trAsync.Response;*/
     }
 
     static void changeMerchant()
